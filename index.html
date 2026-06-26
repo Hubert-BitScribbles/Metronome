@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Metronome - BitScribbles</title>
     <meta name="description" content="A modern, precise metronome for musicians. Features adjustable BPM, multiple time signatures, and preset tempos.">
-    
+
     <!-- React and Babel -->
     <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -18,411 +18,369 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
     <link rel="apple-touch-icon" href="icon-192.png">
-
-    <!-- Theme color for mobile browsers -->
     <meta name="theme-color" content="#0f766e">
-
-    <!-- Web App Manifest -->
     <link rel="manifest" href="manifest.json">
-    
+
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-        }
-        
-        input[type="range"]::-webkit-slider-thumb {
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: white;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: white;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
+        body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; }
+
+        @keyframes modalIn { from{opacity:0;transform:scale(0.85) translateY(20px);}to{opacity:1;transform:scale(1) translateY(0);} }
+        @keyframes beatPulse { 0%,100%{transform:scale(1);}50%{transform:scale(1.35);} }
+        @keyframes float { 0%,100%{transform:translateY(0px);}50%{transform:translateY(-6px);} }
+        @keyframes glow { 0%,100%{box-shadow:0 0 20px rgba(20,184,166,0.3),0 4px 24px rgba(20,184,166,0.3),0 2px 8px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.2);}50%{box-shadow:0 0 40px rgba(20,184,166,0.6),0 0 60px rgba(20,184,166,0.2),0 4px 24px rgba(20,184,166,0.3),0 2px 8px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.2);} }
+
+        .beat-dot { transition:background 0.05s,border 0.05s; }
+        .beat-dot.active-orange { animation:beatPulse 0.15s ease-out; box-shadow:0 0 16px rgba(251,146,60,0.8),0 0 32px rgba(251,146,60,0.4); }
+        .beat-dot.active-teal   { animation:beatPulse 0.15s ease-out; box-shadow:0 0 16px rgba(20,184,166,0.8),0 0 32px rgba(20,184,166,0.4); }
+        .btn-press { transform:scale(0.93) !important; }
+
+        .glass-card { background:rgba(255,255,255,0.07); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.12); }
+        .glass-btn  { background:rgba(255,255,255,0.08); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.15); transition:all 0.2s ease; cursor:pointer; }
+        .glass-btn:hover { background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.25); transform:translateY(-1px); box-shadow:0 8px 24px rgba(0,0,0,0.2); }
+
+        .bpm-display { background:linear-gradient(180deg,rgba(255,255,255,0.95) 0%,rgba(200,255,250,0.9) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 2px 12px rgba(20,184,166,0.4)); }
+
+        input[type=range] { -webkit-appearance:none; appearance:none; height:6px; border-radius:99px; outline:none; cursor:pointer; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:white; cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,0.3),0 0 0 3px rgba(20,184,166,0.3); transition:box-shadow 0.2s; }
+        input[type=range]::-webkit-slider-thumb:hover { box-shadow:0 2px 16px rgba(0,0,0,0.4),0 0 0 5px rgba(20,184,166,0.4); }
+        input[type=range]::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:white; cursor:pointer; border:none; box-shadow:0 2px 12px rgba(0,0,0,0.3); }
+
+        select option { background:#0f4c48; color:white; }
+
+        .start-btn { background:linear-gradient(135deg,#14b8a6 0%,#ea580c 100%); box-shadow:0 4px 24px rgba(20,184,166,0.3),0 2px 8px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.2); transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1); border:1px solid rgba(255,255,255,0.15); cursor:pointer; }
+        .start-btn:hover { transform:translateY(-2px) scale(1.02); box-shadow:0 8px 32px rgba(20,184,166,0.45),0 4px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.2); }
+        .start-btn:active { transform:scale(0.97); }
+
+        .stop-btn { background:linear-gradient(135deg,#ea580c 0%,#c2410c 100%); box-shadow:0 4px 24px rgba(234,88,12,0.35),0 2px 8px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.2); transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1); border:1px solid rgba(255,255,255,0.15); cursor:pointer; }
+        .stop-btn:hover { transform:translateY(-2px) scale(1.02); box-shadow:0 8px 32px rgba(234,88,12,0.5),0 4px 12px rgba(0,0,0,0.3); }
+        .stop-btn:active { transform:scale(0.97); }
+
+        .playing-glow { animation:glow 2s ease-in-out infinite; }
+        .bpm-float { animation:float 2s ease-in-out infinite; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-        
-        // SVG Icon Components
-        const Play = ({ size = 24, fill = "none", ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        const { useState, useRef } = React;
+
+        const Play = ({ size=24, fill="none" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
             </svg>
         );
-        
-        const Pause = ({ size = 24, fill = "none", ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-                <rect x="6" y="4" width="4" height="16"></rect>
-                <rect x="14" y="4" width="4" height="16"></rect>
+        const Pause = ({ size=24, fill="none" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
             </svg>
         );
-        
-        const Save = ({ size = 24, ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                <polyline points="7 3 7 8 15 8"></polyline>
+        const Save = ({ size=24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
             </svg>
         );
-        
-        const HelpCircle = ({ size = 24, ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        const HelpCircle = ({ size=24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
         );
-        
-        const Info = ({ size = 24, ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        const Info = ({ size=24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
         );
-        
-        const X = ({ size = 24, ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+        const X = ({ size=24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
         );
 
         const Metronome = () => {
-          const [bpm, setBpm] = useState(120);
-          const [isPlaying, setIsPlaying] = useState(false);
-          const [timeSignature, setTimeSignature] = useState('4/4');
-          const [currentBeat, setCurrentBeat] = useState(0);
-          const [presets, setPresets] = useState([120, 140, 160]);
-          const [hoveredPreset, setHoveredPreset] = useState(null);
-          const [audioReady, setAudioReady] = useState(false);
-          const [showHelp, setShowHelp] = useState(false);
-          const [showAbout, setShowAbout] = useState(false);
+            const [bpm, setBpm] = useState(120);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [timeSignature, setTimeSignature] = useState('4/4');
+            const [currentBeat, setCurrentBeat] = useState(-1);
+            const [presets, setPresets] = useState([80, 120, 160]);
+            const [hoveredPreset, setHoveredPreset] = useState(null);
+            const [audioReady, setAudioReady] = useState(false);
+            const [showHelp, setShowHelp] = useState(false);
+            const [showAbout, setShowAbout] = useState(false);
+            const [pressedBtn, setPressedBtn] = useState(null);
 
-          const audioContextRef = useRef(null);
-          const nextNoteTimeRef = useRef(0);
-          const schedulerTimerRef = useRef(null);
-          const bpmRef = useRef(bpm);
-          const currentBeatRef = useRef(0);
-          const timeSignatureRef = useRef(timeSignature);
+            const audioCtx = useRef(null);
+            const nextNote = useRef(0);
+            const schedulerRef = useRef(null);
+            const bpmRef = useRef(bpm);
+            const beatRef = useRef(0);
+            const sigRef = useRef(timeSignature);
 
-          useEffect(() => {
-            bpmRef.current = bpm;
-          }, [bpm]);
+            React.useEffect(() => { bpmRef.current = bpm; }, [bpm]);
+            React.useEffect(() => { sigRef.current = timeSignature; }, [timeSignature]);
 
-          useEffect(() => {
-            timeSignatureRef.current = timeSignature;
-          }, [timeSignature]);
+            const getBeats = (sig) => ({'2/4':2,'3/4':3,'4/4':4,'5/4':5,'6/8':6}[sig] || 4);
 
-          const getBeatsPerMeasure = (sig) => {
-            const map = { '2/4': 2, '3/4': 3, '4/4': 4, '5/4': 5, '6/8': 6 };
-            return map[sig] || 4;
-          };
+            const initAudio = () => {
+                if (!audioCtx.current) {
+                    audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
+                    setAudioReady(true);
+                }
+                if (audioCtx.current.state === 'suspended') audioCtx.current.resume();
+            };
 
-          const initAudio = () => {
-            if (!audioContextRef.current) {
-              audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-              setAudioReady(true);
-            }
-            if (audioContextRef.current.state === 'suspended') {
-              audioContextRef.current.resume();
-            }
-          };
+            const playClick = (time) => {
+                const osc = audioCtx.current.createOscillator();
+                const gain = audioCtx.current.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.current.destination);
+                osc.frequency.value = 500;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+                osc.start(time);
+                osc.stop(time + 0.1);
+            };
 
-          const playClick = (time) => {
-            if (!audioContextRef.current) return;
-            const osc = audioContextRef.current.createOscillator();
-            const gain = audioContextRef.current.createGain();
-            osc.connect(gain);
-            gain.connect(audioContextRef.current.destination);
-            osc.frequency.value = 500;
-            osc.type = 'sine';
-            gain.gain.setValueAtTime(0.3, time);
-            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
-            osc.start(time);
-            osc.stop(time + 0.1);
-          };
+            const scheduleNote = (beat, time) => {
+                playClick(time);
+                const delay = (time - audioCtx.current.currentTime) * 1000;
+                setTimeout(() => setCurrentBeat(beat), delay);
+            };
 
-          const scheduleNote = (beatNumber, time) => {
-            playClick(time);
-            setTimeout(() => {
-              setCurrentBeat(beatNumber);
-            }, (time - audioContextRef.current.currentTime) * 1000);
-          };
+            const scheduler = () => {
+                while (nextNote.current < audioCtx.current.currentTime + 0.1) {
+                    scheduleNote(beatRef.current, nextNote.current);
+                    nextNote.current += 60.0 / bpmRef.current;
+                    beatRef.current = (beatRef.current + 1) % getBeats(sigRef.current);
+                }
+                schedulerRef.current = setTimeout(scheduler, 25);
+            };
 
-          const scheduler = () => {
-            const scheduleAheadTime = 0.1;
-            while (nextNoteTimeRef.current < audioContextRef.current.currentTime + scheduleAheadTime) {
-              scheduleNote(currentBeatRef.current, nextNoteTimeRef.current);
-              const secondsPerBeat = 60.0 / bpmRef.current;
-              nextNoteTimeRef.current += secondsPerBeat;
-              currentBeatRef.current = (currentBeatRef.current + 1) % getBeatsPerMeasure(timeSignatureRef.current);
-            }
-            schedulerTimerRef.current = setTimeout(scheduler, 25);
-          };
+            const start = () => {
+                initAudio();
+                beatRef.current = 0;
+                nextNote.current = audioCtx.current.currentTime;
+                setIsPlaying(true);
+                scheduler();
+            };
 
-          const startMetronome = () => {
-            initAudio();
-            if (!audioContextRef.current) return;
-            currentBeatRef.current = 0;
-            nextNoteTimeRef.current = audioContextRef.current.currentTime;
-            scheduleNote(0, nextNoteTimeRef.current);
-            nextNoteTimeRef.current += 60.0 / bpmRef.current;
-            currentBeatRef.current = 1;
-            setIsPlaying(true);
-            scheduler();
-          };
+            const stop = () => {
+                setIsPlaying(false);
+                clearTimeout(schedulerRef.current);
+                schedulerRef.current = null;
+                setCurrentBeat(-1);
+                beatRef.current = 0;
+            };
 
-          const stopMetronome = () => {
-            setIsPlaying(false);
-            if (schedulerTimerRef.current) {
-              clearTimeout(schedulerTimerRef.current);
-              schedulerTimerRef.current = null;
-            }
-            setCurrentBeat(0);
-            currentBeatRef.current = 0;
-          };
+            const changeBpm = (val) => setBpm(Math.max(40, Math.min(240, val)));
 
-          const handleBpmChange = (newBpm) => {
-            const clampedBpm = Math.max(40, Math.min(240, newBpm));
-            setBpm(clampedBpm);
-          };
+            const handleBtnPress = (id, fn) => {
+                setPressedBtn(id);
+                fn();
+                setTimeout(() => setPressedBtn(null), 150);
+            };
 
-          const loadPreset = (index) => handleBpmChange(presets[index]);
+            const beats = Array.from({ length: getBeats(timeSignature) }, (_, i) => i);
+            const sliderPct = ((bpm - 40) / 200) * 100;
 
-          const savePreset = (index, e) => {
-            e.stopPropagation();
-            const newPresets = [...presets];
-            newPresets[index] = bpm;
-            setPresets(newPresets);
-          };
-
-          const beats = Array.from({ length: getBeatsPerMeasure(timeSignature) }, (_, i) => i);
-
-          const Modal = ({ isOpen, onClose, title, children }) => {
-            if (!isOpen) return null;
-            return (
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                <div className="bg-gradient-to-br from-teal-900 to-teal-800 rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-3xl font-bold text-white">{title}</h2>
-                    <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
-                      <X size={28} />
-                    </button>
-                  </div>
-                  <div className="text-white/90 space-y-4">{children}</div>
-                </div>
-              </div>
-            );
-          };
-
-          return (
-            <div className="min-h-screen bg-gradient-to-br from-teal-900 via-teal-800 to-orange-900 flex items-center justify-center p-4">
-              <div className="w-full max-w-md">
-                <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/20">
-
-                  {/* Header */}
-                  <div className="flex justify-between items-start mb-4">
-                    <button onClick={() => setShowHelp(true)} className="text-white/70 hover:text-white transition-colors flex items-center gap-2">
-                      <HelpCircle size={20} />
-                      <span className="text-sm">Help</span>
-                    </button>
-                    <button onClick={() => setShowAbout(true)} className="text-white/70 hover:text-white transition-colors flex items-center gap-2">
-                      <Info size={20} />
-                      <span className="text-sm">About</span>
-                    </button>
-                  </div>
-
-                  {/* Title */}
-                  <div className="text-center mb-6">
-                    <h1 className="text-4xl font-bold text-white">Metronome</h1>
-                    <div className="text-right text-sm text-white/60 mb-2">by BitScribbles</div>
-                    <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent mb-2"></div>
-                    <div className="flex items-center justify-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${audioReady ? 'bg-green-400' : 'bg-gray-400'}`}></div>
-                      <span className="text-white/70 text-sm">{audioReady ? 'Audio Ready' : 'Click Start to Enable Audio'}</span>
+            const Modal = ({ isOpen, onClose, title, children }) => {
+                if (!isOpen) return null;
+                return (
+                    <div style={{ backdropFilter:'blur(12px)', backgroundColor:'rgba(0,0,0,0.6)', position:'fixed', inset:0, display:'flex', alignItems:'center', justifyContent:'center', padding:16, zIndex:50 }}
+                        onClick={(e) => e.target === e.currentTarget && onClose()}>
+                        <div style={{
+                            background:'linear-gradient(135deg, rgba(15,118,110,0.95) 0%, rgba(17,94,89,0.98) 100%)',
+                            backdropFilter:'blur(20px)',
+                            border:'1px solid rgba(255,255,255,0.15)',
+                            boxShadow:'0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
+                            animation:'modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+                            borderRadius:24, padding:32, maxWidth:480, width:'100%', maxHeight:'85vh', overflowY:'auto'
+                        }}>
+                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
+                                <h2 style={{ color:'white', fontSize:22, fontWeight:700, margin:0 }}>{title}</h2>
+                                <button onClick={onClose} className="glass-btn" style={{ padding:8, borderRadius:12, color:'rgba(255,255,255,0.7)', display:'flex' }}>
+                                    <X size={18} />
+                                </button>
+                            </div>
+                            <div style={{ color:'rgba(255,255,255,0.85)' }}>{children}</div>
+                        </div>
                     </div>
-                  </div>
+                );
+            };
 
-                  {/* BPM Display */}
-                  <div className="text-center mb-6">
-                    <div className="text-7xl font-bold text-white mb-2 drop-shadow-lg">{bpm}</div>
-                    <div className="text-xl text-white/80">BPM</div>
-                  </div>
-
-                  {/* BPM Slider */}
-                  <div className="mb-6">
-                    <input
-                      type="range" min="40" max="240" value={bpm}
-                      onChange={(e) => handleBpmChange(Number(e.target.value))}
-                      className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
-                      style={{ background: `linear-gradient(to right, #14b8a6 0%, #14b8a6 ${((bpm - 40) / 200) * 100}%, rgba(255,255,255,0.2) ${((bpm - 40) / 200) * 100}%, rgba(255,255,255,0.2) 100%)` }}
-                    />
-                  </div>
-
-                  {/* Presets */}
-                  <div className="grid grid-cols-3 gap-3 mb-6">
-                    {presets.map((preset, idx) => (
-                      <div key={idx} className="relative"
-                        onMouseEnter={() => setHoveredPreset(idx)}
-                        onMouseLeave={() => setHoveredPreset(null)}>
-                        <button onClick={() => loadPreset(idx)}
-                          className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl p-3 text-white font-semibold transition-all hover:scale-105">
-                          {preset}
-                        </button>
-                        {hoveredPreset === idx && (
-                          <button onClick={(e) => savePreset(idx, e)}
-                            className="absolute top-1 right-1 bg-orange-500 hover:bg-orange-600 rounded-lg p-1.5 transition-all">
-                            <Save size={14} className="text-white" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Beat Indicators */}
-                  <div className="flex justify-center gap-3 mb-6">
-                    {beats.map((beat) => (
-                      <div key={beat}
-                        className={`w-4 h-4 rounded-full transition-all duration-100 ${
-                          isPlaying && currentBeat === beat
-                            ? beat === 0
-                              ? 'bg-orange-400 shadow-lg shadow-orange-400/50 scale-125'
-                              : 'bg-teal-400 shadow-lg shadow-teal-400/50 scale-125'
-                            : 'bg-white/30'
-                        }`}>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Start/Stop Button */}
-                  <button
-                    onClick={isPlaying ? stopMetronome : startMetronome}
-                    className="w-full bg-gradient-to-r from-teal-500 to-orange-500 hover:from-teal-600 hover:to-orange-600 text-white font-bold py-4 px-6 rounded-2xl mb-6 flex items-center justify-center gap-3 text-xl shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                    {isPlaying ? (<><Pause size={28} fill="white" />Stop</>) : (<><Play size={28} fill="white" />Start</>)}
-                  </button>
-
-                  {/* BPM Adjustment Buttons */}
-                  <div className="grid grid-cols-4 gap-2 mb-6">
-                    {[-5, -1, 1, 5].map((delta) => (
-                      <button key={delta} onClick={() => handleBpmChange(bpm + delta)}
-                        className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl py-3 text-white font-semibold transition-all hover:scale-105">
-                        {delta > 0 ? `+${delta}` : delta}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Time Signature */}
-                  <div>
-                    <label className="block text-white/80 text-sm mb-2 text-center">Time Signature</label>
-                    <select value={timeSignature} onChange={(e) => setTimeSignature(e.target.value)}
-                      className="w-full bg-white/10 backdrop-blur-sm border border-white/30 rounded-xl py-3 px-4 text-white font-semibold appearance-none text-center cursor-pointer hover:bg-white/20 transition-all">
-                      <option value="2/4" className="bg-teal-900">2/4</option>
-                      <option value="3/4" className="bg-teal-900">3/4</option>
-                      <option value="4/4" className="bg-teal-900">4/4</option>
-                      <option value="5/4" className="bg-teal-900">5/4</option>
-                      <option value="6/8" className="bg-teal-900">6/8</option>
-                    </select>
-                  </div>
+            const Section = ({ title, children }) => (
+                <div style={{ marginBottom:20 }}>
+                    <h3 style={{ color:'#fb923c', fontSize:14, fontWeight:600, marginBottom:6, marginTop:0 }}>{title}</h3>
+                    <div style={{ fontSize:14, lineHeight:1.6, color:'rgba(255,255,255,0.8)' }}>{children}</div>
                 </div>
-              </div>
+            );
 
-              {/* Help Modal */}
-              <Modal isOpen={showHelp} onClose={() => setShowHelp(false)} title="How to Use">
-                <div className="space-y-6">
-                  <section>
-                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Getting Started</h3>
-                    <p className="leading-relaxed">Click the <strong>Start</strong> button to begin the metronome. The first beat will play immediately. On mobile devices, you may need to tap Start first to enable audio.</p>
-                  </section>
-                  <section>
-                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Adjusting Tempo</h3>
-                    <ul className="space-y-2 list-disc list-inside">
-                      <li>Use the <strong>slider</strong> to adjust BPM smoothly (40–240 range)</li>
-                      <li>Click the <strong>-5, -1, +1, +5 buttons</strong> for precise adjustments</li>
-                      <li>Changes take effect immediately, even while playing</li>
-                    </ul>
-                  </section>
-                  <section>
-                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Preset Buttons</h3>
-                    <p className="leading-relaxed mb-2">The three preset buttons let you save your favourite tempos:</p>
-                    <ul className="space-y-2 list-disc list-inside">
-                      <li><strong>Click</strong> a preset to load that BPM</li>
-                      <li><strong>Hover</strong> over a preset to reveal the save icon</li>
-                      <li><strong>Click the save icon</strong> to store the current BPM to that preset</li>
-                    </ul>
-                  </section>
-                  <section>
-                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Time Signatures</h3>
-                    <ul className="space-y-1 list-disc list-inside">
-                      <li>2/4 — Two beats per measure</li>
-                      <li>3/4 — Three beats per measure (waltz time)</li>
-                      <li>4/4 — Four beats per measure (common time)</li>
-                      <li>5/4 — Five beats per measure</li>
-                      <li>6/8 — Six beats per measure</li>
-                    </ul>
-                  </section>
-                  <section>
-                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Visual Beat Indicators</h3>
-                    <p className="leading-relaxed">The coloured dots show each beat in the measure. The <span className="text-orange-400 font-semibold">first beat</span> lights up in orange, while <span className="text-teal-400 font-semibold">other beats</span> light up in teal. The active beat pulses and glows.</p>
-                  </section>
-                </div>
-              </Modal>
+            return (
+                <div style={{ background:'linear-gradient(135deg, #0d4f4a 0%, #0f766e 40%, #7c2d12 100%)', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+                    <div style={{ width:'100%', maxWidth:360 }}>
+                        <div className="glass-card" style={{ borderRadius:28, padding:24, boxShadow:'0 32px 80px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
 
-              {/* About Modal */}
-              <Modal isOpen={showAbout} onClose={() => setShowAbout(false)} title="About">
-                <div className="space-y-6">
-                  <section>
-                    <h3 className="text-xl font-semibold text-orange-300 mb-3">About This App</h3>
-                    <p className="leading-relaxed">This metronome uses the Web Audio API for precise, accurate timing. It features a warm 500Hz tone and works reliably on both desktop and mobile devices, including iOS.</p>
-                  </section>
-                  <section>
-                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Why I Build These Apps</h3>
-                    <p className="leading-relaxed mb-3">At BitScribbles, I believe the best tools are often the simplest ones. Too many apps today are bloated with features you'll never use, cluttered interfaces, and unnecessary complexity. My goal is to create focused, effective tools that do one thing really well—no distractions, no learning curve, just pure functionality when you need it.</p>
-                    <p className="leading-relaxed mb-3">Whether you're a musician, creative professional, or just someone who values clean, intuitive design, BitScribbles apps are built to respect your time and attention. Simple doesn't mean basic—it means thoughtfully designed to work seamlessly, especially on the devices you actually use.</p>
-                    <p className="leading-relaxed">If this app makes your day a little easier, that makes it all worthwhile. I'm always working on new tools across different domains, so stay tuned. Feel free to reach out with feedback or ideas for other simple apps that could improve your workflow.</p>
-                  </section>
-                  <section>
-                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Disclaimer</h3>
-                    <p className="leading-relaxed">This metronome is provided as-is for practice and educational purposes. While we strive for accuracy, we make no guarantees about timing precision for professional recording or performance use. Use at your own discretion.</p>
-                  </section>
-                  <section>
-                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Contact</h3>
-                    <p className="leading-relaxed">Questions, feedback, or suggestions? Reach out at:</p>
-                    <a href="mailto:hubert@bitscribbles.ca" className="block mt-2 text-teal-300 hover:text-teal-200 underline transition-colors">
-                      hubert@bitscribbles.ca
-                    </a>
-                  </section>
-                  <section>
-                    <h3 className="text-xl font-semibold text-orange-300 mb-3">Support This Project</h3>
-                    <p className="leading-relaxed mb-4">If you find this metronome helpful, consider supporting its development! Your support helps keep this tool free and allows for future improvements.</p>
-                    <a href="https://www.buymeacoffee.com/bitscribbles" target="_blank" rel="noopener noreferrer"
-                      className="inline-block bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 px-6 rounded-xl transition-all hover:scale-105 shadow-lg">
-                      ☕ Buy Me a Coffee
-                    </a>
-                  </section>
-                  <section className="pt-4 border-t border-white/20">
-                    <p className="text-sm text-white/60 text-center">Made with ♪ for musicians everywhere</p>
-                  </section>
+                            {/* Header */}
+                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+                                <button onClick={() => setShowHelp(true)} className="glass-btn" style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px', borderRadius:12, color:'rgba(255,255,255,0.7)', fontSize:13 }}>
+                                    <HelpCircle size={15} /> Help
+                                </button>
+                                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                                    <div style={{ width:7, height:7, borderRadius:'50%', background: audioReady ? '#4ade80' : '#6b7280', boxShadow: audioReady ? '0 0 8px #4ade80' : 'none', transition:'all 0.5s' }}/>
+                                    <span style={{ color:'rgba(255,255,255,0.4)', fontSize:11 }}>{audioReady ? 'Audio Ready' : 'Tap Start'}</span>
+                                </div>
+                                <button onClick={() => setShowAbout(true)} className="glass-btn" style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px', borderRadius:12, color:'rgba(255,255,255,0.7)', fontSize:13 }}>
+                                    <Info size={15} /> About
+                                </button>
+                            </div>
+
+                            {/* Title */}
+                            <div style={{ textAlign:'center', marginBottom:20 }}>
+                                <h1 style={{ color:'white', fontSize:28, fontWeight:800, margin:0, letterSpacing:'-0.5px' }}>Metronome</h1>
+                                <p style={{ color:'rgba(255,255,255,0.35)', fontSize:10, marginTop:2, letterSpacing:4, textTransform:'uppercase' }}>by BitScribbles</p>
+                                <div style={{ marginTop:12, height:1, background:'linear-gradient(90deg, transparent, rgba(20,184,166,0.5), rgba(234,88,12,0.5), transparent)' }}/>
+                            </div>
+
+                            {/* BPM Display */}
+                            <div className={isPlaying ? 'bpm-float' : ''} style={{ textAlign:'center', marginBottom:12 }}>
+                                <div className="bpm-display" style={{ fontSize:88, fontWeight:900, lineHeight:1, fontVariantNumeric:'tabular-nums' }}>{bpm}</div>
+                                <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, letterSpacing:4, textTransform:'uppercase', marginTop:4 }}>BPM</div>
+                            </div>
+
+                            {/* Beat Dots */}
+                            <div style={{ display:'flex', justifyContent:'center', gap:12, marginBottom:20 }}>
+                                {beats.map((b) => {
+                                    const isActive = isPlaying && currentBeat === b;
+                                    const isOrange = b === 0;
+                                    return (
+                                        <div key={b}
+                                            className={`beat-dot${isActive ? (isOrange ? ' active-orange' : ' active-teal') : ''}`}
+                                            style={{
+                                                width:14, height:14, borderRadius:'50%',
+                                                background: isActive ? (isOrange ? '#fb923c' : '#2dd4bf') : 'rgba(255,255,255,0.15)',
+                                                border: `1.5px solid ${isActive ? (isOrange ? 'rgba(251,146,60,0.6)' : 'rgba(45,212,191,0.6)') : 'rgba(255,255,255,0.2)'}`,
+                                            }}
+                                        />
+                                    );
+                                })}
+                            </div>
+
+                            {/* Slider */}
+                            <div style={{ marginBottom:20, padding:'0 4px' }}>
+                                <input type="range" min="40" max="240" value={bpm}
+                                    onChange={(e) => changeBpm(Number(e.target.value))}
+                                    style={{ width:'100%', background:`linear-gradient(to right, #14b8a6 0%, #ea580c ${sliderPct}%, rgba(255,255,255,0.15) ${sliderPct}%, rgba(255,255,255,0.15) 100%)` }}
+                                />
+                                <div style={{ display:'flex', justifyContent:'space-between', color:'rgba(255,255,255,0.25)', fontSize:11, marginTop:4, padding:'0 4px' }}>
+                                    <span>40</span><span>120</span><span>240</span>
+                                </div>
+                            </div>
+
+                            {/* Presets */}
+                            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
+                                {presets.map((p, i) => (
+                                    <div key={i} style={{ position:'relative' }}
+                                        onMouseEnter={() => setHoveredPreset(i)}
+                                        onMouseLeave={() => setHoveredPreset(null)}>
+                                        <button onClick={() => handleBtnPress(`preset-${i}`, () => changeBpm(p))}
+                                            className={`glass-btn${pressedBtn === `preset-${i}` ? ' btn-press' : ''}`}
+                                            style={{
+                                                width:'100%', padding:'10px 0', borderRadius:12,
+                                                color:'white', fontWeight:600, fontSize:14,
+                                                background: bpm === p ? 'rgba(20,184,166,0.2)' : undefined,
+                                                borderColor: bpm === p ? 'rgba(20,184,166,0.5)' : undefined,
+                                            }}>
+                                            {p}
+                                        </button>
+                                        {hoveredPreset === i && (
+                                            <button onClick={(e) => { e.stopPropagation(); const n=[...presets]; n[i]=bpm; setPresets(n); }}
+                                                style={{ position:'absolute', top:4, right:4, padding:4, borderRadius:8, background:'rgba(234,88,12,0.85)', border:'none', cursor:'pointer', display:'flex', color:'white' }}>
+                                                <Save size={11} />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Start/Stop */}
+                            <button onClick={isPlaying ? stop : start}
+                                className={`${isPlaying ? 'stop-btn' : 'start-btn'}${isPlaying ? ' playing-glow' : ''}`}
+                                style={{ width:'100%', padding:'14px 0', borderRadius:18, color:'white', fontWeight:700, fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:14 }}>
+                                {isPlaying ? <><Pause size={22} fill="white"/> Stop</> : <><Play size={22} fill="white"/> Start</>}
+                            </button>
+
+                            {/* BPM Adjust */}
+                            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8, marginBottom:16 }}>
+                                {[[-5,'-5'],[-1,'-1'],[1,'+1'],[5,'+5']].map(([d, label]) => (
+                                    <button key={d} onClick={() => handleBtnPress(`bpm${d}`, () => changeBpm(bpm + d))}
+                                        className={`glass-btn${pressedBtn === `bpm${d}` ? ' btn-press' : ''}`}
+                                        style={{ padding:'10px 0', borderRadius:12, color:'white', fontWeight:600, fontSize:14 }}>
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Time Signature */}
+                            <div>
+                                <div style={{ textAlign:'center', color:'rgba(255,255,255,0.35)', fontSize:10, letterSpacing:4, textTransform:'uppercase', marginBottom:8 }}>Time Signature</div>
+                                <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:6 }}>
+                                    {['2/4','3/4','4/4','5/4','6/8'].map((sig) => (
+                                        <button key={sig} onClick={() => setTimeSignature(sig)}
+                                            className="glass-btn"
+                                            style={{
+                                                padding:'8px 0', borderRadius:12, fontSize:13, fontWeight:600,
+                                                color: timeSignature === sig ? 'white' : 'rgba(255,255,255,0.5)',
+                                                background: timeSignature === sig ? 'linear-gradient(135deg, rgba(20,184,166,0.3), rgba(234,88,12,0.2))' : undefined,
+                                                borderColor: timeSignature === sig ? 'rgba(20,184,166,0.5)' : undefined,
+                                                boxShadow: timeSignature === sig ? '0 0 12px rgba(20,184,166,0.2)' : undefined,
+                                            }}>
+                                            {sig}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Help Modal */}
+                    <Modal isOpen={showHelp} onClose={() => setShowHelp(false)} title="How to Use">
+                        <Section title="Getting Started">Tap Start to begin. The first beat plays immediately. On mobile, tapping Start also enables audio.</Section>
+                        <Section title="Adjusting Tempo">Drag the slider for quick changes, or use the ±1 and ±5 buttons for precision. Changes take effect instantly while playing.</Section>
+                        <Section title="Presets">Tap a preset to load it. Hover and tap the save icon to store your current BPM to that slot.</Section>
+                        <Section title="Time Signatures">2/4, 3/4, 4/4, 5/4 and 6/8 are available. The beat dots update to match.</Section>
+                        <Section title="Beat Indicators">The orange dot marks beat one. Teal dots mark the remaining beats. All dots pulse and glow on each hit.</Section>
+                    </Modal>
+
+                    {/* About Modal */}
+                    <Modal isOpen={showAbout} onClose={() => setShowAbout(false)} title="About">
+                        <Section title="About This App">This metronome uses the Web Audio API for precise timing with a warm 500Hz tone, and works on desktop and mobile including iOS.</Section>
+                        <Section title="Why I Build These Apps">
+                            <p style={{ margin:'0 0 8px' }}>At BitScribbles, I believe the best tools are often the simplest ones. Too many apps are bloated with features you'll never use. My goal is to create focused tools that do one thing really well — no distractions, no learning curve, just pure functionality.</p>
+                            <p style={{ margin:'0 0 8px' }}>BitScribbles apps are built to respect your time and attention. Simple doesn't mean basic — it means thoughtfully designed to work seamlessly on the devices you actually use.</p>
+                            <p style={{ margin:0 }}>I'm always working on new tools across different domains, so stay tuned.</p>
+                        </Section>
+                        <Section title="Disclaimer">Provided as-is for practice and educational purposes. No guarantees about timing precision for professional recording use.</Section>
+                        <Section title="Contact">
+                            <a href="mailto:hubert@bitscribbles.com" style={{ color:'#2dd4bf' }}>hubert@bitscribbles.com</a>
+                        </Section>
+                        <Section title="Support This Project">
+                            <p style={{ margin:'0 0 12px' }}>If this app makes your practice sessions better, consider buying me a coffee!</p>
+                            <a href="https://www.buymeacoffee.com/bitscribbles" target="_blank" rel="noopener noreferrer"
+                                style={{ display:'inline-block', background:'linear-gradient(135deg,#fb923c,#ea580c)', color:'white', fontWeight:600, fontSize:14, padding:'10px 20px', borderRadius:12, textDecoration:'none', boxShadow:'0 4px 16px rgba(234,88,12,0.35)' }}>
+                                ☕ Buy Me a Coffee
+                            </a>
+                        </Section>
+                        <div style={{ borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:16, textAlign:'center', color:'rgba(255,255,255,0.3)', fontSize:12 }}>
+                            Made with ♪ for musicians everywhere
+                        </div>
+                    </Modal>
                 </div>
-              </Modal>
-            </div>
-          );
+            );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
