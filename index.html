@@ -106,7 +106,13 @@
             const [isPlaying, setIsPlaying] = useState(false);
             const [timeSignature, setTimeSignature] = useState('4/4');
             const [currentBeat, setCurrentBeat] = useState(-1);
-            const [presets, setPresets] = useState([80, 120, 160]);
+            const savedPresets = () => {
+                try {
+                    const s = localStorage.getItem('metronome-presets');
+                    return s ? JSON.parse(s) : [80, 120, 160];
+                } catch { return [80, 120, 160]; }
+            };
+            const [presets, setPresets] = useState(savedPresets);
             const [hoveredPreset, setHoveredPreset] = useState(null);
             const [audioReady, setAudioReady] = useState(false);
             const [showHelp, setShowHelp] = useState(false);
@@ -298,7 +304,7 @@
                                             {p}
                                         </button>
                                         {hoveredPreset === i && (
-                                            <button onClick={(e) => { e.stopPropagation(); const n=[...presets]; n[i]=bpm; setPresets(n); }}
+                                            <button onClick={(e) => { e.stopPropagation(); const n=[...presets]; n[i]=bpm; setPresets(n); try { localStorage.setItem('metronome-presets', JSON.stringify(n)); } catch {} }}
                                                 style={{ position:'absolute', top:4, right:4, padding:4, borderRadius:8, background:'rgba(234,88,12,0.85)', border:'none', cursor:'pointer', display:'flex', color:'white' }}>
                                                 <Save size={11} />
                                             </button>
