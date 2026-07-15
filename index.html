@@ -114,6 +114,8 @@
             };
             const [presets, setPresets] = useState(savedPresets);
             const [hoveredPreset, setHoveredPreset] = useState(null);
+            const [savedPresetIdx, setSavedPresetIdx] = useState(null);
+            const longPressTimer = useRef(null);
             const [audioReady, setAudioReady] = useState(false);
             const [showHelp, setShowHelp] = useState(false);
             const [showAbout, setShowAbout] = useState(false);
@@ -184,6 +186,22 @@
             };
 
             const changeBpm = (val) => setBpm(Math.max(40, Math.min(240, val)));
+
+            const startLongPress = (i) => {
+                longPressTimer.current = setTimeout(() => {
+                    const n = [...presets];
+                    n[i] = bpm;
+                    setPresets(n);
+                    setSavedPresetIdx(i);
+                    setTimeout(() => setSavedPresetIdx(null), 1000);
+                    try { localStorage.setItem('metronome-presets', JSON.stringify(n)); } catch {}
+                    try { window.navigator.vibrate && window.navigator.vibrate(60); } catch {}
+                }, 600);
+            };
+
+            const cancelLongPress = () => {
+                clearTimeout(longPressTimer.current);
+            };
 
             const handleBtnPress = (id, fn) => {
                 setPressedBtn(id);
@@ -290,25 +308,29 @@
                             {/* Presets */}
                             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
                                 {presets.map((p, i) => (
-                                    <div key={i} style={{ position:'relative' }}
-                                        onMouseEnter={() => setHoveredPreset(i)}
-                                        onMouseLeave={() => setHoveredPreset(null)}>
-                                        <button onClick={() => handleBtnPress(`preset-${i}`, () => changeBpm(p))}
+                                    <div key={i} style={{ position:'relative' }}>
+                                        <button
+                                            onClick={() => handleBtnPress(`preset-${i}`, () => changeBpm(p))}
+                                            onMouseDown={() => startLongPress(i)}
+                                            onMouseUp={cancelLongPress}
+                                            onMouseLeave={cancelLongPress}
+                                            onTouchStart={() => startLongPress(i)}
+                                            onTouchEnd={cancelLongPress}
+                                            onTouchCancel={cancelLongPress}
                                             className={`glass-btn${pressedBtn === `preset-${i}` ? ' btn-press' : ''}`}
                                             style={{
                                                 width:'100%', padding:'10px 0', borderRadius:12,
                                                 color:'white', fontWeight:600, fontSize:14,
-                                                background: bpm === p ? 'rgba(20,184,166,0.2)' : undefined,
-                                                borderColor: bpm === p ? 'rgba(20,184,166,0.5)' : undefined,
+                                                background: savedPresetIdx === i
+                                                    ? 'rgba(234,88,12,0.35)'
+                                                    : bpm === p ? 'rgba(20,184,166,0.2)' : undefined,
+                                                borderColor: savedPresetIdx === i
+                                                    ? 'rgba(234,88,12,0.7)'
+                                                    : bpm === p ? 'rgba(20,184,166,0.5)' : undefined,
+                                                transition: 'background 0.2s, border-color 0.2s',
                                             }}>
-                                            {p}
+                                            {savedPresetIdx === i ? '✓ Saved' : p}
                                         </button>
-                                        {hoveredPreset === i && (
-                                            <button onClick={(e) => { e.stopPropagation(); const n=[...presets]; n[i]=bpm; setPresets(n); try { localStorage.setItem('metronome-presets', JSON.stringify(n)); } catch {} }}
-                                                style={{ position:'absolute', top:4, right:4, padding:4, borderRadius:8, background:'rgba(234,88,12,0.85)', border:'none', cursor:'pointer', display:'flex', color:'white' }}>
-                                                <Save size={11} />
-                                            </button>
-                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -357,7 +379,7 @@
                     <Modal isOpen={showHelp} onClose={() => setShowHelp(false)} title="How to Use">
                         <Section title="Getting Started">Tap Start to begin. The first beat plays immediately. On mobile, tapping Start also enables audio.</Section>
                         <Section title="Adjusting Tempo">Drag the slider for quick changes, or use the ±1 and ±5 buttons for precision. Changes take effect instantly while playing.</Section>
-                        <Section title="Presets">Tap a preset to load it. Hover and tap the save icon to store your current BPM to that slot.</Section>
+                        <Section title="Presets">Tap a preset to load that BPM. To save the current BPM to a preset slot, press and hold it for about half a second — the button will flash orange and show a ✓ to confirm. Presets are saved automatically and survive page reloads.</Section>
                         <Section title="Time Signatures">2/4, 3/4, 4/4, 5/4 and 6/8 are available. The beat dots update to match.</Section>
                         <Section title="Beat Indicators">The orange dot marks beat one. Teal dots mark the remaining beats. All dots pulse and glow on each hit.</Section>
                     </Modal>
