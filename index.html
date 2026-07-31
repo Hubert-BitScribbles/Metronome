@@ -6,15 +6,11 @@
     <title>Metronome - BitScribbles</title>
     <meta name="description" content="A modern, precise metronome for musicians. Features adjustable BPM, multiple time signatures, and preset tempos.">
 
-    <!-- React and Babel -->
     <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
-
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- PWA Icons -->
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -22,397 +18,421 @@
     <link rel="manifest" href="manifest.json">
 
     <style>
-        body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; }
-
-        @keyframes modalIn { from{opacity:0;transform:scale(0.85) translateY(20px);}to{opacity:1;transform:scale(1) translateY(0);} }
-        @keyframes beatPulse { 0%,100%{transform:scale(1);}50%{transform:scale(1.35);} }
-        @keyframes float { 0%,100%{transform:translateY(0px);}50%{transform:translateY(-6px);} }
-        @keyframes glow { 0%,100%{box-shadow:0 0 20px rgba(20,184,166,0.3),0 4px 24px rgba(20,184,166,0.3),0 2px 8px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.2);}50%{box-shadow:0 0 40px rgba(20,184,166,0.6),0 0 60px rgba(20,184,166,0.2),0 4px 24px rgba(20,184,166,0.3),0 2px 8px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.2);} }
-
-        .beat-dot { transition:background 0.05s,border 0.05s; }
-        .beat-dot.active-orange { animation:beatPulse 0.15s ease-out; box-shadow:0 0 16px rgba(251,146,60,0.8),0 0 32px rgba(251,146,60,0.4); }
-        .beat-dot.active-teal   { animation:beatPulse 0.15s ease-out; box-shadow:0 0 16px rgba(20,184,166,0.8),0 0 32px rgba(20,184,166,0.4); }
-        .btn-press { transform:scale(0.93) !important; }
-
-        .glass-card { background:rgba(255,255,255,0.07); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,0.12); }
-        .glass-btn  { background:rgba(255,255,255,0.08); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.15); transition:all 0.2s ease; cursor:pointer; }
-        .glass-btn:hover { background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.25); transform:translateY(-1px); box-shadow:0 8px 24px rgba(0,0,0,0.2); }
-
-        .bpm-display { background:linear-gradient(180deg,rgba(255,255,255,0.95) 0%,rgba(200,255,250,0.9) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 2px 12px rgba(20,184,166,0.4)); }
-
-        input[type=range] { -webkit-appearance:none; appearance:none; height:6px; border-radius:99px; outline:none; cursor:pointer; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:white; cursor:pointer; box-shadow:0 2px 12px rgba(0,0,0,0.3),0 0 0 3px rgba(20,184,166,0.3); transition:box-shadow 0.2s; }
-        input[type=range]::-webkit-slider-thumb:hover { box-shadow:0 2px 16px rgba(0,0,0,0.4),0 0 0 5px rgba(20,184,166,0.4); }
-        input[type=range]::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:white; cursor:pointer; border:none; box-shadow:0 2px 12px rgba(0,0,0,0.3); }
-
-        select option { background:#0f4c48; color:white; }
-
-        .start-btn { background:linear-gradient(135deg,#14b8a6 0%,#ea580c 100%); box-shadow:0 4px 24px rgba(20,184,166,0.3),0 2px 8px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.2); transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1); border:1px solid rgba(255,255,255,0.15); cursor:pointer; }
-        .start-btn:hover { transform:translateY(-2px) scale(1.02); box-shadow:0 8px 32px rgba(20,184,166,0.45),0 4px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.2); }
-        .start-btn:active { transform:scale(0.97); }
-
-        .stop-btn { background:linear-gradient(135deg,#ea580c 0%,#c2410c 100%); box-shadow:0 4px 24px rgba(234,88,12,0.35),0 2px 8px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.2); transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1); border:1px solid rgba(255,255,255,0.15); cursor:pointer; }
-        .stop-btn:hover { transform:translateY(-2px) scale(1.02); box-shadow:0 8px 32px rgba(234,88,12,0.5),0 4px 12px rgba(0,0,0,0.3); }
-        .stop-btn:active { transform:scale(0.97); }
-
-        .playing-glow { animation:glow 2s ease-in-out infinite; }
-        .bpm-float { animation:float 2s ease-in-out infinite; }
+        body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif; }
+        @keyframes modalIn   { from{opacity:0;transform:scale(0.88) translateY(16px);}to{opacity:1;transform:scale(1) translateY(0);} }
+        @keyframes beatPop   { 0%,100%{transform:scale(1);}50%{transform:scale(1.4);} }
+        @keyframes floatUp   { 0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);} }
+        @keyframes pulseGlow { 0%,100%{box-shadow:0 0 0 0 rgba(22,179,163,0.0),0 4px 20px rgba(20,23,28,0.3);}50%{box-shadow:0 0 0 6px rgba(22,179,163,0.15),0 4px 20px rgba(20,23,28,0.3);} }
+        @keyframes modeSwitch { from{opacity:0;}to{opacity:1;} }
+        .beat-amber { animation:beatPop 0.14s ease-out; box-shadow:0 0 14px rgba(242,177,52,0.9),0 0 28px rgba(242,177,52,0.4) !important; }
+        .beat-teal  { animation:beatPop 0.14s ease-out; box-shadow:0 0 14px rgba(22,179,163,0.9),0 0 28px rgba(22,179,163,0.4) !important; }
+        .btn-press  { transform:scale(0.92) !important; }
+        input[type=range] { -webkit-appearance:none; appearance:none; height:5px; border-radius:99px; outline:none; cursor:pointer; width:100%; display:block; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#fff; cursor:pointer; box-shadow:0 1px 8px rgba(20,23,28,0.25),0 0 0 3px rgba(22,179,163,0.25); transition:box-shadow 0.2s; }
+        input[type=range]::-webkit-slider-thumb:hover { box-shadow:0 1px 12px rgba(20,23,28,0.35),0 0 0 5px rgba(22,179,163,0.35); }
+        input[type=range]::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#fff; border:none; cursor:pointer; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
+<div id="root"></div>
+<script type="text/babel">
+    const { useState, useRef, useEffect } = React;
 
-    <script type="text/babel">
-        const { useState, useRef } = React;
+    // ── Icons ───────────────────────────────────────────────────────
+    const Play = ({ size=24, fill="none" }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    );
+    const Pause = ({ size=24, fill="none" }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+    );
+    const HelpCircle = ({ size=24 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    );
+    const Info = ({ size=24 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    );
+    const X = ({ size=24 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    );
+    const Sun = ({ size=16 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+    );
+    const Moon = ({ size=16 }) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+    );
 
-        const Play = ({ size=24, fill="none" }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-        );
-        const Pause = ({ size=24, fill="none" }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
-            </svg>
-        );
-        const Save = ({ size=24 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-            </svg>
-        );
-        const HelpCircle = ({ size=24 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-        );
-        const Info = ({ size=24 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="16" x2="12" y2="12"/>
-                <line x1="12" y1="8" x2="12.01" y2="8"/>
-            </svg>
-        );
-        const X = ({ size=24 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-        );
+    // ── Design tokens ───────────────────────────────────────────────
+    const TEAL   = '#16B3A3';
+    const PURPLE = '#6E56CF';
+    const AMBER  = '#F2B134';
+    const MONO    = "'JetBrains Mono', monospace";
+    const GROTESK = "'Space Grotesk', sans-serif";
+    const INTER   = "'Inter', sans-serif";
+    const CAVEAT  = "'Caveat', cursive";
 
-        const Metronome = () => {
-            const [bpm, setBpm] = useState(120);
-            const [isPlaying, setIsPlaying] = useState(false);
-            const [timeSignature, setTimeSignature] = useState('4/4');
-            const [currentBeat, setCurrentBeat] = useState(-1);
-            const savedPresets = () => {
-                try {
-                    const s = localStorage.getItem('metronome-presets');
-                    return s ? JSON.parse(s) : [80, 120, 160];
-                } catch { return [80, 120, 160]; }
-            };
-            const [presets, setPresets] = useState(savedPresets);
-            const [hoveredPreset, setHoveredPreset] = useState(null);
-            const [savedPresetIdx, setSavedPresetIdx] = useState(null);
-            const longPressTimer = useRef(null);
-            const [audioReady, setAudioReady] = useState(false);
-            const [showHelp, setShowHelp] = useState(false);
-            const [showAbout, setShowAbout] = useState(false);
-            const [pressedBtn, setPressedBtn] = useState(null);
+    const themes = {
+        dark: {
+            bg:             'linear-gradient(135deg, #14171C 0%, #1C1535 55%, #6E56CF 160%)',
+            cardBg:         'rgba(250,250,249,0.06)',
+            cardBorder:     'rgba(250,250,249,0.12)',
+            cardShadow:     '0 24px 64px rgba(20,23,28,0.45), inset 0 1px 0 rgba(250,250,249,0.08)',
+            modalBg:        'rgba(20,23,28,0.93)',
+            btnBg:          'rgba(250,250,249,0.07)',
+            btnBorder:      'rgba(250,250,249,0.14)',
+            btnHover:       'rgba(250,250,249,0.13)',
+            btnBorderHover: 'rgba(250,250,249,0.22)',
+            text:           '#FAFAF9',
+            textMid:        'rgba(250,250,249,0.65)',
+            textDim:        'rgba(250,250,249,0.35)',
+            textFaint:      'rgba(250,250,249,0.25)',
+            textBody:       'rgba(250,250,249,0.78)',
+            bpmColor:       '#FAFAF9',
+            bpmShadow:      '0 0 40px rgba(22,179,163,0.3)',
+            dotInactive:    'rgba(250,250,249,0.12)',
+            dotBorder:      'rgba(250,250,249,0.18)',
+            divider:        'rgba(250,250,249,0.10)',
+            sliderTrack:    'rgba(250,250,249,0.12)',
+            midColor:       '#6B7280',
+            link:           TEAL,
+        },
+        light: {
+            bg:             'linear-gradient(135deg, #e8f7f6 0%, #f0eeff 55%, #e2dcf8 100%)',
+            cardBg:         'rgba(255,255,255,0.72)',
+            cardBorder:     'rgba(20,23,28,0.08)',
+            cardShadow:     '0 12px 48px rgba(20,23,28,0.12), inset 0 1px 0 rgba(255,255,255,0.9)',
+            modalBg:        'rgba(250,250,249,0.97)',
+            btnBg:          'rgba(20,23,28,0.05)',
+            btnBorder:      'rgba(20,23,28,0.12)',
+            btnHover:       'rgba(20,23,28,0.09)',
+            btnBorderHover: 'rgba(20,23,28,0.2)',
+            text:           '#14171C',
+            textMid:        'rgba(20,23,28,0.65)',
+            textDim:        'rgba(20,23,28,0.4)',
+            textFaint:      'rgba(20,23,28,0.3)',
+            textBody:       'rgba(20,23,28,0.75)',
+            bpmColor:       '#14171C',
+            bpmShadow:      '0 0 40px rgba(22,179,163,0.15)',
+            dotInactive:    'rgba(20,23,28,0.10)',
+            dotBorder:      'rgba(20,23,28,0.15)',
+            divider:        'rgba(20,23,28,0.08)',
+            sliderTrack:    'rgba(20,23,28,0.10)',
+            midColor:       '#6B7280',
+            link:           '#0e9688',
+        },
+    };
 
-            const audioCtx = useRef(null);
-            const nextNote = useRef(0);
-            const schedulerRef = useRef(null);
-            const bpmRef = useRef(bpm);
-            const beatRef = useRef(0);
-            const sigRef = useRef(timeSignature);
-
-            React.useEffect(() => { bpmRef.current = bpm; }, [bpm]);
-            React.useEffect(() => { sigRef.current = timeSignature; }, [timeSignature]);
-
-            const getBeats = (sig) => ({'2/4':2,'3/4':3,'4/4':4,'5/4':5,'6/8':6}[sig] || 4);
-
-            const initAudio = () => {
-                if (!audioCtx.current) {
-                    audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
-                    setAudioReady(true);
-                }
-                if (audioCtx.current.state === 'suspended') audioCtx.current.resume();
-            };
-
-            const playClick = (time) => {
-                const osc = audioCtx.current.createOscillator();
-                const gain = audioCtx.current.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.current.destination);
-                osc.frequency.value = 500;
-                osc.type = 'sine';
-                gain.gain.setValueAtTime(0.3, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
-                osc.start(time);
-                osc.stop(time + 0.1);
-            };
-
-            const scheduleNote = (beat, time) => {
-                playClick(time);
-                const delay = (time - audioCtx.current.currentTime) * 1000;
-                setTimeout(() => setCurrentBeat(beat), delay);
-            };
-
-            const scheduler = () => {
-                while (nextNote.current < audioCtx.current.currentTime + 0.1) {
-                    scheduleNote(beatRef.current, nextNote.current);
-                    nextNote.current += 60.0 / bpmRef.current;
-                    beatRef.current = (beatRef.current + 1) % getBeats(sigRef.current);
-                }
-                schedulerRef.current = setTimeout(scheduler, 25);
-            };
-
-            const start = () => {
-                initAudio();
-                beatRef.current = 0;
-                nextNote.current = audioCtx.current.currentTime;
-                setIsPlaying(true);
-                scheduler();
-            };
-
-            const stop = () => {
-                setIsPlaying(false);
-                clearTimeout(schedulerRef.current);
-                schedulerRef.current = null;
-                setCurrentBeat(-1);
-                beatRef.current = 0;
-            };
-
-            const changeBpm = (val) => setBpm(Math.max(40, Math.min(240, val)));
-
-            const startLongPress = (i) => {
-                longPressTimer.current = setTimeout(() => {
-                    const n = [...presets];
-                    n[i] = bpm;
-                    setPresets(n);
-                    setSavedPresetIdx(i);
-                    setTimeout(() => setSavedPresetIdx(null), 1000);
-                    try { localStorage.setItem('metronome-presets', JSON.stringify(n)); } catch {}
-                    try { window.navigator.vibrate && window.navigator.vibrate(60); } catch {}
-                }, 600);
-            };
-
-            const cancelLongPress = () => {
-                clearTimeout(longPressTimer.current);
-            };
-
-            const handleBtnPress = (id, fn) => {
-                setPressedBtn(id);
-                fn();
-                setTimeout(() => setPressedBtn(null), 150);
-            };
-
-            const beats = Array.from({ length: getBeats(timeSignature) }, (_, i) => i);
-            const sliderPct = ((bpm - 40) / 200) * 100;
-
-            const Modal = ({ isOpen, onClose, title, children }) => {
-                if (!isOpen) return null;
-                return (
-                    <div style={{ backdropFilter:'blur(12px)', backgroundColor:'rgba(0,0,0,0.6)', position:'fixed', inset:0, display:'flex', alignItems:'center', justifyContent:'center', padding:16, zIndex:50 }}
-                        onClick={(e) => e.target === e.currentTarget && onClose()}>
-                        <div style={{
-                            background:'linear-gradient(135deg, rgba(15,118,110,0.95) 0%, rgba(17,94,89,0.98) 100%)',
-                            backdropFilter:'blur(20px)',
-                            border:'1px solid rgba(255,255,255,0.15)',
-                            boxShadow:'0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
-                            animation:'modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1)',
-                            borderRadius:24, padding:32, maxWidth:480, width:'100%', maxHeight:'85vh', overflowY:'auto'
-                        }}>
-                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
-                                <h2 style={{ color:'white', fontSize:22, fontWeight:700, margin:0 }}>{title}</h2>
-                                <button onClick={onClose} className="glass-btn" style={{ padding:8, borderRadius:12, color:'rgba(255,255,255,0.7)', display:'flex' }}>
-                                    <X size={18} />
-                                </button>
-                            </div>
-                            <div style={{ color:'rgba(255,255,255,0.85)' }}>{children}</div>
-                        </div>
+    // ── Helpers ─────────────────────────────────────────────────────
+    function Modal({ isOpen, onClose, title, children, t }) {
+        if (!isOpen) return null;
+        return (
+            <div onClick={(e) => e.target === e.currentTarget && onClose()}
+                style={{ position:'fixed', inset:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', padding:16, background:'rgba(20,23,28,0.6)', backdropFilter:'blur(10px)' }}>
+                <div style={{ background:t.modalBg, backdropFilter:'blur(28px)', border:'1px solid ' + t.cardBorder, borderRadius:20, boxShadow:t.cardShadow, maxWidth:460, width:'100%', maxHeight:'88vh', overflowY:'auto', padding:28, animation:'modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1)', transition:'background 0.3s' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:22 }}>
+                        <h2 style={{ margin:0, fontFamily:GROTESK, fontWeight:700, fontSize:18, color:t.text }}>{title}</h2>
+                        <button onClick={onClose} style={{ background:t.btnBg, border:'1px solid ' + t.btnBorder, borderRadius:12, padding:8, display:'flex', color:t.textMid, cursor:'pointer' }}>
+                            <X size={17}/>
+                        </button>
                     </div>
-                );
-            };
-
-            const Section = ({ title, children }) => (
-                <div style={{ marginBottom:20 }}>
-                    <h3 style={{ color:'#fb923c', fontSize:14, fontWeight:600, marginBottom:6, marginTop:0 }}>{title}</h3>
-                    <div style={{ fontSize:14, lineHeight:1.6, color:'rgba(255,255,255,0.8)' }}>{children}</div>
+                    <div style={{ fontFamily:INTER, fontSize:14, lineHeight:1.65, color:t.textBody }}>{children}</div>
                 </div>
-            );
+            </div>
+        );
+    }
 
-            return (
-                <div style={{ background:'linear-gradient(135deg, #0d4f4a 0%, #0f766e 40%, #7c2d12 100%)', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-                    <div style={{ width:'100%', maxWidth:360 }}>
-                        <div className="glass-card" style={{ borderRadius:28, padding:24, boxShadow:'0 32px 80px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
+    function Section({ title, children }) {
+        return (
+            <div style={{ marginBottom:20 }}>
+                <div style={{ fontFamily:MONO, fontSize:11, letterSpacing:'0.12em', textTransform:'uppercase', color:PURPLE, marginBottom:6 }}>{title}</div>
+                <div>{children}</div>
+            </div>
+        );
+    }
 
-                            {/* Header */}
-                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-                                <button onClick={() => setShowHelp(true)} className="glass-btn" style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px', borderRadius:12, color:'rgba(255,255,255,0.7)', fontSize:13 }}>
-                                    <HelpCircle size={15} /> Help
-                                </button>
-                                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                                    <div style={{ width:7, height:7, borderRadius:'50%', background: audioReady ? '#4ade80' : '#6b7280', boxShadow: audioReady ? '0 0 8px #4ade80' : 'none', transition:'all 0.5s' }}/>
-                                    <span style={{ color:'rgba(255,255,255,0.4)', fontSize:11 }}>{audioReady ? 'Audio Ready' : 'Tap Start'}</span>
-                                </div>
-                                <button onClick={() => setShowAbout(true)} className="glass-btn" style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px', borderRadius:12, color:'rgba(255,255,255,0.7)', fontSize:13 }}>
-                                    <Info size={15} /> About
-                                </button>
-                            </div>
+    // ── App ─────────────────────────────────────────────────────────
+    const Metronome = () => {
+        const [dark, setDark] = useState(() => { try { return localStorage.getItem('bs-theme') !== 'light'; } catch { return true; } });
+        const t = dark ? themes.dark : themes.light;
+        const toggleTheme = () => setDark(d => { const next = !d; try { localStorage.setItem('bs-theme', next ? 'dark' : 'light'); } catch {} return next; });
 
-                            {/* Title */}
-                            <div style={{ textAlign:'center', marginBottom:20 }}>
-                                <h1 style={{ color:'white', fontSize:28, fontWeight:800, margin:0, letterSpacing:'-0.5px' }}>Metronome</h1>
-                                <p style={{ color:'rgba(255,255,255,0.35)', fontSize:10, marginTop:2, letterSpacing:4, textTransform:'uppercase' }}>by BitScribbles</p>
-                                <div style={{ marginTop:12, height:1, background:'linear-gradient(90deg, transparent, rgba(20,184,166,0.5), rgba(234,88,12,0.5), transparent)' }}/>
-                            </div>
+        const [bpm, setBpm]               = useState(120);
+        const [isPlaying, setIsPlaying]   = useState(false);
+        const [timeSig, setTimeSig]       = useState('4/4');
+        const [currentBeat, setCurrentBeat] = useState(-1);
+        const [presets, setPresets]       = useState(() => { try { const s = localStorage.getItem('metronome-presets'); return s ? JSON.parse(s) : [80,120,160]; } catch { return [80,120,160]; } });
+        const [savedIdx, setSavedIdx]     = useState(null);
+        const [audioReady, setAudioReady] = useState(false);
+        const [showHelp, setShowHelp]     = useState(false);
+        const [showAbout, setShowAbout]   = useState(false);
+        const [pressedBtn, setPressedBtn] = useState(null);
 
-                            {/* BPM Display */}
-                            <div className={isPlaying ? 'bpm-float' : ''} style={{ textAlign:'center', marginBottom:12 }}>
-                                <div className="bpm-display" style={{ fontSize:88, fontWeight:900, lineHeight:1, fontVariantNumeric:'tabular-nums' }}>{bpm}</div>
-                                <div style={{ color:'rgba(255,255,255,0.35)', fontSize:11, letterSpacing:4, textTransform:'uppercase', marginTop:4 }}>BPM</div>
-                            </div>
+        const audioCtx     = useRef(null);
+        const nextNote     = useRef(0);
+        const schedulerRef = useRef(null);
+        const bpmRef       = useRef(bpm);
+        const beatRef      = useRef(0);
+        const sigRef       = useRef(timeSig);
+        const lpTimer      = useRef(null);
 
-                            {/* Beat Dots */}
-                            <div style={{ display:'flex', justifyContent:'center', gap:12, marginBottom:20 }}>
-                                {beats.map((b) => {
-                                    const isActive = isPlaying && currentBeat === b;
-                                    const isOrange = b === 0;
-                                    return (
-                                        <div key={b}
-                                            className={`beat-dot${isActive ? (isOrange ? ' active-orange' : ' active-teal') : ''}`}
-                                            style={{
-                                                width:14, height:14, borderRadius:'50%',
-                                                background: isActive ? (isOrange ? '#fb923c' : '#2dd4bf') : 'rgba(255,255,255,0.15)',
-                                                border: `1.5px solid ${isActive ? (isOrange ? 'rgba(251,146,60,0.6)' : 'rgba(45,212,191,0.6)') : 'rgba(255,255,255,0.2)'}`,
-                                            }}
-                                        />
-                                    );
-                                })}
-                            </div>
+        useEffect(() => { bpmRef.current = bpm; }, [bpm]);
+        useEffect(() => { sigRef.current = timeSig; }, [timeSig]);
 
-                            {/* Slider */}
-                            <div style={{ marginBottom:20, padding:'0 4px' }}>
-                                <input type="range" min="40" max="240" value={bpm}
-                                    onChange={(e) => changeBpm(Number(e.target.value))}
-                                    style={{ width:'100%', background:`linear-gradient(to right, #14b8a6 0%, #ea580c ${sliderPct}%, rgba(255,255,255,0.15) ${sliderPct}%, rgba(255,255,255,0.15) 100%)` }}
-                                />
-                                <div style={{ display:'flex', justifyContent:'space-between', color:'rgba(255,255,255,0.25)', fontSize:11, marginTop:4, padding:'0 4px' }}>
-                                    <span>40</span><span>120</span><span>240</span>
-                                </div>
-                            </div>
+        const getBeats = (s) => ({'2/4':2,'3/4':3,'4/4':4,'5/4':5,'6/8':6}[s]||4);
 
-                            {/* Presets */}
-                            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
-                                {presets.map((p, i) => (
-                                    <div key={i} style={{ position:'relative' }}>
-                                        <button
-                                            onClick={() => handleBtnPress(`preset-${i}`, () => changeBpm(p))}
-                                            onMouseDown={() => startLongPress(i)}
-                                            onMouseUp={cancelLongPress}
-                                            onMouseLeave={cancelLongPress}
-                                            onTouchStart={() => startLongPress(i)}
-                                            onTouchEnd={cancelLongPress}
-                                            onTouchCancel={cancelLongPress}
-                                            className={`glass-btn${pressedBtn === `preset-${i}` ? ' btn-press' : ''}`}
-                                            style={{
-                                                width:'100%', padding:'10px 0', borderRadius:12,
-                                                color:'white', fontWeight:600, fontSize:14,
-                                                background: savedPresetIdx === i
-                                                    ? 'rgba(234,88,12,0.35)'
-                                                    : bpm === p ? 'rgba(20,184,166,0.2)' : undefined,
-                                                borderColor: savedPresetIdx === i
-                                                    ? 'rgba(234,88,12,0.7)'
-                                                    : bpm === p ? 'rgba(20,184,166,0.5)' : undefined,
-                                                transition: 'background 0.2s, border-color 0.2s',
-                                            }}>
-                                            {savedPresetIdx === i ? '✓ Saved' : p}
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
+        const initAudio = () => {
+            if (!audioCtx.current) { audioCtx.current = new (window.AudioContext || window.webkitAudioContext)(); setAudioReady(true); }
+            if (audioCtx.current.state === 'suspended') audioCtx.current.resume();
+        };
 
-                            {/* Start/Stop */}
-                            <button onClick={isPlaying ? stop : start}
-                                className={`${isPlaying ? 'stop-btn' : 'start-btn'}${isPlaying ? ' playing-glow' : ''}`}
-                                style={{ width:'100%', padding:'14px 0', borderRadius:18, color:'white', fontWeight:700, fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:14 }}>
-                                {isPlaying ? <><Pause size={22} fill="white"/> Stop</> : <><Play size={22} fill="white"/> Start</>}
+        const playClick = (time) => {
+            const osc = audioCtx.current.createOscillator(), g = audioCtx.current.createGain();
+            osc.connect(g); g.connect(audioCtx.current.destination);
+            osc.frequency.value = 500; osc.type = 'sine';
+            g.gain.setValueAtTime(0.3, time);
+            g.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+            osc.start(time); osc.stop(time + 0.1);
+        };
+
+        const scheduleNote = (beat, time) => {
+            playClick(time);
+            setTimeout(() => setCurrentBeat(beat), (time - audioCtx.current.currentTime) * 1000);
+        };
+
+        const scheduler = () => {
+            while (nextNote.current < audioCtx.current.currentTime + 0.1) {
+                scheduleNote(beatRef.current, nextNote.current);
+                nextNote.current += 60.0 / bpmRef.current;
+                beatRef.current = (beatRef.current + 1) % getBeats(sigRef.current);
+            }
+            schedulerRef.current = setTimeout(scheduler, 25);
+        };
+
+        const start = () => { initAudio(); beatRef.current = 0; nextNote.current = audioCtx.current.currentTime; setIsPlaying(true); scheduler(); };
+        const stop  = () => { setIsPlaying(false); clearTimeout(schedulerRef.current); schedulerRef.current = null; setCurrentBeat(-1); beatRef.current = 0; };
+
+        const changeBpm = (v) => setBpm(Math.max(40, Math.min(240, v)));
+        const press = (id, fn) => { setPressedBtn(id); fn(); setTimeout(() => setPressedBtn(null), 150); };
+
+        const startLP = (i) => {
+            lpTimer.current = setTimeout(() => {
+                const n = [...presets]; n[i] = bpm; setPresets(n);
+                setSavedIdx(i); setTimeout(() => setSavedIdx(null), 1000);
+                try { localStorage.setItem('metronome-presets', JSON.stringify(n)); } catch {}
+                try { window.navigator.vibrate && window.navigator.vibrate(60); } catch {}
+            }, 600);
+        };
+        const cancelLP = () => clearTimeout(lpTimer.current);
+
+        const beats     = Array.from({ length: getBeats(timeSig) }, (_, i) => i);
+        const sliderPct = ((bpm - 40) / 200) * 100;
+        const sliderBg  = 'linear-gradient(to right,' + TEAL + ' 0%,' + TEAL + ' ' + sliderPct + '%,' + t.sliderTrack + ' ' + sliderPct + '%,' + t.sliderTrack + ' 100%)';
+
+        const gBtn = (extra={}) => ({
+            background: t.btnBg, border: '1px solid ' + t.btnBorder, borderRadius: 12,
+            color: t.text, cursor: 'pointer', fontFamily: INTER, fontWeight: 600,
+            fontSize: 13, transition: 'all 0.18s ease', ...extra,
+        });
+
+        const onHover = (e, on) => {
+            e.currentTarget.style.background  = on ? t.btnHover : t.btnBg;
+            e.currentTarget.style.borderColor = on ? t.btnBorderHover : t.btnBorder;
+            e.currentTarget.style.transform   = on ? 'translateY(-1px)' : '';
+        };
+
+        return (
+            <div style={{ minHeight:'100vh', background:t.bg, display:'flex', alignItems:'center', justifyContent:'center', padding:16, fontFamily:INTER, transition:'background 0.4s' }}>
+
+                {/* Google Fonts */}
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Caveat:wght@700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"/>
+
+                <div style={{ width:'100%', maxWidth:348 }}>
+                    <div style={{ background:t.cardBg, backdropFilter:'blur(28px)', WebkitBackdropFilter:'blur(28px)', border:'1px solid ' + t.cardBorder, borderRadius:20, boxShadow:t.cardShadow, padding:24, transition:'all 0.3s', animation:'modeSwitch 0.3s ease' }}>
+
+                        {/* Header */}
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
+                            <button onClick={() => setShowHelp(true)} style={{ ...gBtn(), display:'flex', alignItems:'center', gap:5, padding:'7px 11px', color:t.textMid }}
+                                onMouseEnter={(e) => onHover(e,true)} onMouseLeave={(e) => onHover(e,false)}>
+                                <HelpCircle size={14}/> Help
                             </button>
-
-                            {/* BPM Adjust */}
-                            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8, marginBottom:16 }}>
-                                {[[-5,'-5'],[-1,'-1'],[1,'+1'],[5,'+5']].map(([d, label]) => (
-                                    <button key={d} onClick={() => handleBtnPress(`bpm${d}`, () => changeBpm(bpm + d))}
-                                        className={`glass-btn${pressedBtn === `bpm${d}` ? ' btn-press' : ''}`}
-                                        style={{ padding:'10px 0', borderRadius:12, color:'white', fontWeight:600, fontSize:14 }}>
-                                        {label}
-                                    </button>
-                                ))}
+                            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                                <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+                                    <div style={{ width:6, height:6, borderRadius:'50%', transition:'all 0.4s', background: audioReady ? '#4ade80' : t.midColor, boxShadow: audioReady ? '0 0 7px #4ade80' : 'none' }}/>
+                                    <span style={{ fontFamily:MONO, fontSize:10, letterSpacing:'0.08em', color:t.textDim }}>{audioReady ? 'AUDIO ON' : 'TAP START'}</span>
+                                </div>
+                                <button onClick={toggleTheme}
+                                    style={{ ...gBtn({ padding:'6px 10px', borderRadius:10, fontSize:12, display:'flex', alignItems:'center', gap:4 }), color:t.textMid }}
+                                    onMouseEnter={(e) => onHover(e,true)} onMouseLeave={(e) => onHover(e,false)}
+                                    title={dark ? 'Switch to light mode' : 'Switch to dark mode'}>
+                                    {dark ? <Sun size={14}/> : <Moon size={14}/>}
+                                </button>
                             </div>
+                            <button onClick={() => setShowAbout(true)} style={{ ...gBtn(), display:'flex', alignItems:'center', gap:5, padding:'7px 11px', color:t.textMid }}
+                                onMouseEnter={(e) => onHover(e,true)} onMouseLeave={(e) => onHover(e,false)}>
+                                <Info size={14}/> About
+                            </button>
+                        </div>
 
-                            {/* Time Signature */}
-                            <div>
-                                <div style={{ textAlign:'center', color:'rgba(255,255,255,0.35)', fontSize:10, letterSpacing:4, textTransform:'uppercase', marginBottom:8 }}>Time Signature</div>
-                                <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:6 }}>
-                                    {['2/4','3/4','4/4','5/4','6/8'].map((sig) => (
-                                        <button key={sig} onClick={() => setTimeSignature(sig)}
-                                            className="glass-btn"
-                                            style={{
-                                                padding:'8px 0', borderRadius:12, fontSize:13, fontWeight:600,
-                                                color: timeSignature === sig ? 'white' : 'rgba(255,255,255,0.5)',
-                                                background: timeSignature === sig ? 'linear-gradient(135deg, rgba(20,184,166,0.3), rgba(234,88,12,0.2))' : undefined,
-                                                borderColor: timeSignature === sig ? 'rgba(20,184,166,0.5)' : undefined,
-                                                boxShadow: timeSignature === sig ? '0 0 12px rgba(20,184,166,0.2)' : undefined,
+                        {/* Wordmark */}
+                        <div style={{ textAlign:'center', marginBottom:18 }}>
+                            <div style={{ fontSize:22, lineHeight:1 }}>
+                                <span style={{ fontFamily:MONO, fontWeight:700, color:TEAL }}>
+                                    <span style={{ color:'rgba(22,179,163,0.55)' }}>&lt;</span>bit<span style={{ color:'rgba(22,179,163,0.55)' }}>/&gt;</span>
+                                </span>
+                                <span style={{ fontFamily:CAVEAT, fontWeight:700, color:t.text, fontSize:36, transition:'color 0.3s' }}>Metronome</span>
+                            </div>
+                            <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:'0.12em', textTransform:'uppercase', color:PURPLE, marginTop:4 }}>by bitScribbles</div>
+                            <div style={{ marginTop:12, height:1, background:'linear-gradient(90deg, transparent, rgba(22,179,163,0.5), rgba(110,86,207,0.5), transparent)' }}/>
+                        </div>
+
+                        {/* BPM */}
+                        <div style={{ textAlign:'center', marginBottom:10, animation: isPlaying ? 'floatUp 2s ease-in-out infinite' : 'none' }}>
+                            <div style={{ fontFamily:GROTESK, fontWeight:700, fontSize:84, lineHeight:1, color:t.bpmColor, letterSpacing:'-2px', textShadow:t.bpmShadow, fontVariantNumeric:'tabular-nums', transition:'color 0.3s' }}>{bpm}</div>
+                            <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:t.midColor, marginTop:2 }}>BPM</div>
+                        </div>
+
+                        {/* Beat dots */}
+                        <div style={{ display:'flex', justifyContent:'center', gap:10, marginBottom:18 }}>
+                            {beats.map((b) => {
+                                const active = isPlaying && currentBeat === b;
+                                const isOne  = b === 0;
+                                return (
+                                    <div key={b} className={active ? (isOne ? 'beat-amber' : 'beat-teal') : ''}
+                                        style={{ width:13, height:13, borderRadius:'50%', transition:'background 0.05s, border-color 0.05s',
+                                            background: active ? (isOne ? AMBER : TEAL) : t.dotInactive,
+                                            border: '1.5px solid ' + (active ? (isOne ? AMBER : TEAL) : t.dotBorder),
+                                        }}/>
+                                );
+                            })}
+                        </div>
+
+                        {/* Slider */}
+                        <div style={{ marginBottom:18 }}>
+                            <input type="range" min="40" max="240" value={bpm} onChange={(e) => changeBpm(Number(e.target.value))} style={{ background:sliderBg }}/>
+                            <div style={{ display:'flex', justifyContent:'space-between', fontFamily:MONO, fontSize:10, color:t.textFaint, marginTop:5 }}>
+                                <span>40</span><span>120</span><span>240</span>
+                            </div>
+                        </div>
+
+                        {/* Presets */}
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
+                            {presets.map((p, i) => {
+                                const isSaved   = savedIdx === i;
+                                const isCurrent = bpm === p && savedIdx === null;
+                                return (
+                                    <button key={i}
+                                        onClick={() => press('p'+i, () => changeBpm(p))}
+                                        onMouseDown={() => startLP(i)} onMouseUp={cancelLP}
+                                        onMouseEnter={(e) => onHover(e,true)} onMouseLeave={(e) => { cancelLP(); onHover(e,false); }}
+                                        onTouchStart={() => startLP(i)} onTouchEnd={cancelLP} onTouchCancel={cancelLP}
+                                        className={pressedBtn==='p'+i ? 'btn-press' : ''}
+                                        style={{ ...gBtn({ fontFamily:MONO, fontSize:13, padding:'9px 0' }),
+                                            background: isSaved ? 'rgba(242,177,52,0.18)' : isCurrent ? 'rgba(22,179,163,0.15)' : t.btnBg,
+                                            borderColor: isSaved ? AMBER : isCurrent ? TEAL : t.btnBorder,
+                                            color: isSaved ? AMBER : t.text,
+                                        }}>
+                                        {isSaved ? '✓ saved' : p}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Start/Stop */}
+                        <button onClick={isPlaying ? stop : start}
+                            style={{ width:'100%', padding:'13px 0', borderRadius:14, border:'none', cursor:'pointer',
+                                fontFamily:GROTESK, fontWeight:700, fontSize:17, color:'#FAFAF9',
+                                display:'flex', alignItems:'center', justifyContent:'center', gap:9, marginBottom:12,
+                                background: isPlaying ? 'linear-gradient(135deg,#b45309,#92400e)' : 'linear-gradient(135deg,#16B3A3,#0e9688)',
+                                boxShadow: isPlaying ? '0 4px 20px rgba(180,83,9,0.4),inset 0 1px 0 rgba(255,255,255,0.1)' : '0 4px 20px rgba(22,179,163,0.35),inset 0 1px 0 rgba(255,255,255,0.1)',
+                                animation: isPlaying ? 'pulseGlow 2s ease-in-out infinite' : 'none',
+                                transition: 'background 0.25s, box-shadow 0.25s',
+                            }}>
+                            {isPlaying ? <><Pause size={20} fill="#FAFAF9"/>Stop</> : <><Play size={20} fill="#FAFAF9"/>Start</>}
+                        </button>
+
+                        {/* ±BPM */}
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:7, marginBottom:14 }}>
+                            {[[-5,'-5'],[-1,'-1'],[1,'+1'],[5,'+5']].map(([d,lbl]) => (
+                                <button key={d} onClick={() => press('d'+d, () => changeBpm(bpm+d))}
+                                    onMouseEnter={(e) => onHover(e,true)} onMouseLeave={(e) => onHover(e,false)}
+                                    className={pressedBtn==='d'+d ? 'btn-press' : ''}
+                                    style={{ ...gBtn({ fontFamily:MONO, fontSize:13, padding:'9px 0' }) }}>
+                                    {lbl}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Time sig */}
+                        <div>
+                            <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:'0.12em', textTransform:'uppercase', color:PURPLE, textAlign:'center', marginBottom:8 }}>Time Signature</div>
+                            <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:6 }}>
+                                {['2/4','3/4','4/4','5/4','6/8'].map((sig) => {
+                                    const active = timeSig === sig;
+                                    return (
+                                        <button key={sig} onClick={() => setTimeSig(sig)}
+                                            onMouseEnter={(e) => onHover(e,true)} onMouseLeave={(e) => onHover(e,false)}
+                                            style={{ ...gBtn({ fontSize:12, padding:'8px 0' }),
+                                                color: active ? '#FAFAF9' : t.textMid,
+                                                background: active ? 'rgba(110,86,207,0.25)' : t.btnBg,
+                                                borderColor: active ? PURPLE : t.btnBorder,
+                                                boxShadow: active ? '0 0 10px rgba(110,86,207,0.2)' : 'none',
                                             }}>
                                             {sig}
                                         </button>
-                                    ))}
-                                </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
-
-                    {/* Help Modal */}
-                    <Modal isOpen={showHelp} onClose={() => setShowHelp(false)} title="How to Use">
-                        <Section title="Getting Started">Tap Start to begin. The first beat plays immediately. On mobile, tapping Start also enables audio.</Section>
-                        <Section title="Adjusting Tempo">Drag the slider for quick changes, or use the ±1 and ±5 buttons for precision. Changes take effect instantly while playing.</Section>
-                        <Section title="Presets">Tap a preset to load that BPM. To save the current BPM to a preset slot, press and hold it for about half a second — the button will flash orange and show a ✓ to confirm. Presets are saved automatically and survive page reloads.</Section>
-                        <Section title="Time Signatures">2/4, 3/4, 4/4, 5/4 and 6/8 are available. The beat dots update to match.</Section>
-                        <Section title="Beat Indicators">The orange dot marks beat one. Teal dots mark the remaining beats. All dots pulse and glow on each hit.</Section>
-                    </Modal>
-
-                    {/* About Modal */}
-                    <Modal isOpen={showAbout} onClose={() => setShowAbout(false)} title="About">
-                        <Section title="About This App">This metronome uses the Web Audio API for precise timing with a warm 500Hz tone, and works on desktop and mobile including iOS.</Section>
-                        <Section title="Why I Build These Apps">
-                            <p style={{ margin:'0 0 8px' }}>At BitScribbles, I believe the best tools are often the simplest ones. Too many apps are bloated with features you'll never use. My goal is to create focused tools that do one thing really well — no distractions, no learning curve, just pure functionality.</p>
-                            <p style={{ margin:'0 0 8px' }}>BitScribbles apps are built to respect your time and attention. Simple doesn't mean basic — it means thoughtfully designed to work seamlessly on the devices you actually use.</p>
-                            <p style={{ margin:0 }}>I'm always working on new tools across different domains, so stay tuned.</p>
-                        </Section>
-                        <Section title="Disclaimer">Provided as-is for practice and educational purposes. No guarantees about timing precision for professional recording use.</Section>
-                        <Section title="Contact">
-                            <a href="mailto:hubert@bitscribbles.com" style={{ color:'#2dd4bf' }}>hubert@bitscribbles.com</a>
-                        </Section>
-                        <Section title="Support This Project">
-                            <p style={{ margin:'0 0 12px' }}>If this app makes your practice sessions better, consider buying me a coffee!</p>
-                            <a href="https://www.buymeacoffee.com/bitscribbles" target="_blank" rel="noopener noreferrer"
-                                style={{ display:'inline-block', background:'linear-gradient(135deg,#fb923c,#ea580c)', color:'white', fontWeight:600, fontSize:14, padding:'10px 20px', borderRadius:12, textDecoration:'none', boxShadow:'0 4px 16px rgba(234,88,12,0.35)' }}>
-                                ☕ Buy Me a Coffee
-                            </a>
-                        </Section>
-                        <div style={{ borderTop:'1px solid rgba(255,255,255,0.1)', paddingTop:16, textAlign:'center', color:'rgba(255,255,255,0.3)', fontSize:12 }}>
-                            Made with ♪ for musicians everywhere
-                        </div>
-                    </Modal>
                 </div>
-            );
-        };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<Metronome />);
-    </script>
+                {/* Help Modal */}
+                <Modal isOpen={showHelp} onClose={() => setShowHelp(false)} title="How to Use" t={t}>
+                    <Section title="Getting Started">Tap Start to begin — the first beat plays immediately. On mobile, tapping Start also enables the audio engine.</Section>
+                    <Section title="Adjusting Tempo">Drag the slider for quick changes, or use the ±1 and ±5 buttons for precision. Changes take effect instantly while playing.</Section>
+                    <Section title="Presets">Tap a preset to load that BPM. To save, press and hold a preset for about half a second — it will flash amber and confirm with ✓ saved. Presets survive page reloads.</Section>
+                    <Section title="Time Signatures">Choose from 2/4, 3/4, 4/4, 5/4, or 6/8. The beat dots update to match.</Section>
+                    <Section title="Beat Indicators">
+                        <span style={{ color:AMBER }}>Amber</span> marks beat one. <span style={{ color:TEAL }}>Teal</span> marks the rest. Each dot pulses and glows on every hit.
+                    </Section>
+                    <Section title="Light / Dark Mode">Tap the sun or moon icon in the header to switch themes. Your preference is saved automatically.</Section>
+                </Modal>
+
+                {/* About Modal */}
+                <Modal isOpen={showAbout} onClose={() => setShowAbout(false)} title="About" t={t}>
+                    <Section title="About This App">This metronome uses the Web Audio API for precise timing with a warm 500Hz tone. Works on desktop and mobile, including iOS.</Section>
+                    <Section title="Why I Build These Apps">
+                        <p style={{ margin:'0 0 8px' }}>At bitScribbles, I believe the best tools are often the simplest ones. Too many apps are bloated with features you'll never use. My goal is focused tools that do one thing really well — no distractions, no learning curve, just pure functionality.</p>
+                        <p style={{ margin:'0 0 8px' }}>Simple doesn't mean basic — it means thoughtfully designed to work seamlessly on the devices you actually use.</p>
+                        <p style={{ margin:0 }}>Always working on new tools across different domains — stay tuned.</p>
+                    </Section>
+                    <Section title="Disclaimer">Provided as-is for practice and educational purposes. No guarantees about timing precision for professional recording use.</Section>
+                    <Section title="Contact">
+                        <a href="mailto:hubert@bitscribbles.com" style={{ color:t.link }}>hubert@bitscribbles.com</a>
+                    </Section>
+                    <Section title="Support">
+                        <p style={{ margin:'0 0 10px' }}>If this app helps your practice, consider buying me a coffee!</p>
+                        <a href="https://www.buymeacoffee.com/bitscribbles" target="_blank" rel="noopener noreferrer"
+                            style={{ display:'inline-block', background:'linear-gradient(135deg,#F2B134,#d97706)', color:'#14171C', fontFamily:GROTESK, fontWeight:700, fontSize:13, padding:'9px 18px', borderRadius:10, textDecoration:'none' }}>
+                            ☕ Buy Me a Coffee
+                        </a>
+                    </Section>
+                    <div style={{ borderTop:'1px solid ' + t.divider, paddingTop:14, textAlign:'center', fontFamily:MONO, fontSize:10, letterSpacing:'0.08em', color:t.textFaint }}>
+                        {'/* made with ♪ for musicians everywhere */'}
+                    </div>
+                </Modal>
+            </div>
+        );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<Metronome />);
+</script>
 </body>
 </html>
