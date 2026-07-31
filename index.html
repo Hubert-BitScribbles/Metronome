@@ -9,7 +9,9 @@
     <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Caveat:wght@700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -18,7 +20,7 @@
     <link rel="manifest" href="manifest.json">
 
     <style>
-        body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif; }
+        body { margin:0; padding:0; }
         @keyframes modalIn   { from{opacity:0;transform:scale(0.88) translateY(16px);}to{opacity:1;transform:scale(1) translateY(0);} }
         @keyframes beatPop   { 0%,100%{transform:scale(1);}50%{transform:scale(1.4);} }
         @keyframes floatUp   { 0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);} }
@@ -128,7 +130,7 @@
         },
     };
 
-    // ── Helpers ─────────────────────────────────────────────────────
+    // ── Components ──────────────────────────────────────────────────
     function Modal({ isOpen, onClose, title, children, t }) {
         if (!isOpen) return null;
         return (
@@ -156,22 +158,34 @@
         );
     }
 
-    // ── App ─────────────────────────────────────────────────────────
+    function Toggle({ on, onToggle, label, t }) {
+        return (
+            <div style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', userSelect:'none' }} onClick={onToggle}>
+                <div style={{ width:36, height:20, borderRadius:99, position:'relative', transition:'background 0.25s', background: on ? TEAL : t.btnBorder, border:'1px solid ' + (on ? TEAL : t.btnBorder), flexShrink:0 }}>
+                    <div style={{ position:'absolute', top:2, left: on ? 18 : 2, width:14, height:14, borderRadius:'50%', background:'#fff', boxShadow:'0 1px 4px rgba(0,0,0,0.2)', transition:'left 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}/>
+                </div>
+                <span style={{ fontFamily:MONO, fontSize:11, letterSpacing:'0.06em', color: on ? t.text : t.textDim, transition:'color 0.2s' }}>{label}</span>
+            </div>
+        );
+    }
+
+    // ── Main App ────────────────────────────────────────────────────
     const Metronome = () => {
         const [dark, setDark] = useState(() => { try { return localStorage.getItem('bs-theme') !== 'light'; } catch { return true; } });
         const t = dark ? themes.dark : themes.light;
         const toggleTheme = () => setDark(d => { const next = !d; try { localStorage.setItem('bs-theme', next ? 'dark' : 'light'); } catch {} return next; });
 
-        const [bpm, setBpm]               = useState(120);
-        const [isPlaying, setIsPlaying]   = useState(false);
-        const [timeSig, setTimeSig]       = useState('4/4');
+        const [bpm, setBpm]                 = useState(120);
+        const [isPlaying, setIsPlaying]     = useState(false);
+        const [timeSig, setTimeSig]         = useState('4/4');
         const [currentBeat, setCurrentBeat] = useState(-1);
-        const [presets, setPresets]       = useState(() => { try { const s = localStorage.getItem('metronome-presets'); return s ? JSON.parse(s) : [80,120,160]; } catch { return [80,120,160]; } });
-        const [savedIdx, setSavedIdx]     = useState(null);
-        const [audioReady, setAudioReady] = useState(false);
-        const [showHelp, setShowHelp]     = useState(false);
-        const [showAbout, setShowAbout]   = useState(false);
-        const [pressedBtn, setPressedBtn] = useState(null);
+        const [presets, setPresets]         = useState(() => { try { const s = localStorage.getItem('metronome-presets'); return s ? JSON.parse(s) : [80,120,160]; } catch { return [80,120,160]; } });
+        const [savedIdx, setSavedIdx]       = useState(null);
+        const [audioReady, setAudioReady]   = useState(false);
+        const [showHelp, setShowHelp]       = useState(false);
+        const [showAbout, setShowAbout]     = useState(false);
+        const [pressedBtn, setPressedBtn]   = useState(null);
+        const [accentBeat, setAccentBeat]   = useState(() => { try { return localStorage.getItem('bs-accent') === 'true'; } catch { return false; } });
 
         const audioCtx     = useRef(null);
         const nextNote     = useRef(0);
@@ -179,10 +193,18 @@
         const bpmRef       = useRef(bpm);
         const beatRef      = useRef(0);
         const sigRef       = useRef(timeSig);
+        const accentRef    = useRef(accentBeat);
         const lpTimer      = useRef(null);
 
         useEffect(() => { bpmRef.current = bpm; }, [bpm]);
         useEffect(() => { sigRef.current = timeSig; }, [timeSig]);
+        useEffect(() => { accentRef.current = accentBeat; }, [accentBeat]);
+
+        const toggleAccent = () => setAccentBeat(a => {
+            const next = !a;
+            try { localStorage.setItem('bs-accent', String(next)); } catch {}
+            return next;
+        });
 
         const getBeats = (s) => ({'2/4':2,'3/4':3,'4/4':4,'5/4':5,'6/8':6}[s]||4);
 
@@ -191,17 +213,20 @@
             if (audioCtx.current.state === 'suspended') audioCtx.current.resume();
         };
 
-        const playClick = (time) => {
-            const osc = audioCtx.current.createOscillator(), g = audioCtx.current.createGain();
-            osc.connect(g); g.connect(audioCtx.current.destination);
-            osc.frequency.value = 500; osc.type = 'sine';
-            g.gain.setValueAtTime(0.3, time);
+        const playClick = (time, isDownbeat) => {
+            const ctx = audioCtx.current;
+            const osc = ctx.createOscillator(), g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.frequency.value = (accentRef.current && isDownbeat) ? 660 : 500;
+            osc.type = 'sine';
+            const vol = (accentRef.current && isDownbeat) ? 0.45 : 0.3;
+            g.gain.setValueAtTime(vol, time);
             g.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
             osc.start(time); osc.stop(time + 0.1);
         };
 
         const scheduleNote = (beat, time) => {
-            playClick(time);
+            playClick(time, beat === 0);
             setTimeout(() => setCurrentBeat(beat), (time - audioCtx.current.currentTime) * 1000);
         };
 
@@ -248,10 +273,6 @@
 
         return (
             <div style={{ minHeight:'100vh', background:t.bg, display:'flex', alignItems:'center', justifyContent:'center', padding:16, fontFamily:INTER, transition:'background 0.4s' }}>
-
-                {/* Google Fonts */}
-                <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Caveat:wght@700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"/>
-
                 <div style={{ width:'100%', maxWidth:348 }}>
                     <div style={{ background:t.cardBg, backdropFilter:'blur(28px)', WebkitBackdropFilter:'blur(28px)', border:'1px solid ' + t.cardBorder, borderRadius:20, boxShadow:t.cardShadow, padding:24, transition:'all 0.3s', animation:'modeSwitch 0.3s ease' }}>
 
@@ -368,10 +389,10 @@
                             ))}
                         </div>
 
-                        {/* Time sig */}
+                        {/* Time Signature */}
                         <div>
                             <div style={{ fontFamily:MONO, fontSize:10, letterSpacing:'0.12em', textTransform:'uppercase', color:PURPLE, textAlign:'center', marginBottom:8 }}>Time Signature</div>
-                            <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:6 }}>
+                            <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:6, marginBottom:14 }}>
                                 {['2/4','3/4','4/4','5/4','6/8'].map((sig) => {
                                     const active = timeSig === sig;
                                     return (
@@ -388,6 +409,11 @@
                                     );
                                 })}
                             </div>
+
+                            {/* Accent toggle */}
+                            <div style={{ borderTop:'1px solid ' + t.divider, paddingTop:12, display:'flex', justifyContent:'center' }}>
+                                <Toggle on={accentBeat} onToggle={toggleAccent} label="ACCENT BEAT ONE" t={t}/>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -398,9 +424,8 @@
                     <Section title="Adjusting Tempo">Drag the slider for quick changes, or use the ±1 and ±5 buttons for precision. Changes take effect instantly while playing.</Section>
                     <Section title="Presets">Tap a preset to load that BPM. To save, press and hold a preset for about half a second — it will flash amber and confirm with ✓ saved. Presets survive page reloads.</Section>
                     <Section title="Time Signatures">Choose from 2/4, 3/4, 4/4, 5/4, or 6/8. The beat dots update to match.</Section>
-                    <Section title="Beat Indicators">
-                        <span style={{ color:AMBER }}>Amber</span> marks beat one. <span style={{ color:TEAL }}>Teal</span> marks the rest. Each dot pulses and glows on every hit.
-                    </Section>
+                    <Section title="Beat Indicators"><span style={{ color:AMBER }}>Amber</span> marks beat one. <span style={{ color:TEAL }}>Teal</span> marks the rest. Each dot pulses and glows on every hit.</Section>
+                    <Section title="Accent Beat One">Toggle this on to play beat one at a higher pitch (660Hz) and slightly louder than the other beats. Useful for feeling the start of each bar at fast tempos. Off by default. Your preference is saved automatically.</Section>
                     <Section title="Light / Dark Mode">Tap the sun or moon icon in the header to switch themes. Your preference is saved automatically.</Section>
                 </Modal>
 
@@ -413,9 +438,7 @@
                         <p style={{ margin:0 }}>Always working on new tools across different domains — stay tuned.</p>
                     </Section>
                     <Section title="Disclaimer">Provided as-is for practice and educational purposes. No guarantees about timing precision for professional recording use.</Section>
-                    <Section title="Contact">
-                        <a href="mailto:hubert@bitscribbles.com" style={{ color:t.link }}>hubert@bitscribbles.com</a>
-                    </Section>
+                    <Section title="Contact"><a href="mailto:hubert@bitscribbles.com" style={{ color:t.link }}>hubert@bitscribbles.com</a></Section>
                     <Section title="Support">
                         <p style={{ margin:'0 0 10px' }}>If this app helps your practice, consider buying me a coffee!</p>
                         <a href="https://www.buymeacoffee.com/bitscribbles" target="_blank" rel="noopener noreferrer"
