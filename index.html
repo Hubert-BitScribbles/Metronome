@@ -200,7 +200,13 @@
         const lpTimer      = useRef(null);
 
         useEffect(() => { bpmRef.current = bpm; }, [bpm]);
-        useEffect(() => { sigRef.current = timeSig; }, [timeSig]);
+        useEffect(() => {
+            sigRef.current = timeSig;
+            const newBeats = getBeats(timeSig);
+            if (beatRef.current >= newBeats) {
+                beatRef.current = 0;
+            }
+        }, [timeSig]);
         useEffect(() => { accentRef.current = accentBeat; }, [accentBeat]);
 
         const toggleAccent = () => setAccentBeat(a => {
@@ -229,17 +235,25 @@
         };
 
         const scheduleNote = (beat, time) => {
-            playClick(time, beat === 0);
-            setTimeout(() => setCurrentBeat(beat), (time - audioCtx.current.currentTime) * 1000);
+            try {
+                playClick(time, beat === 0);
+                setTimeout(() => setCurrentBeat(beat), (time - audioCtx.current.currentTime) * 1000);
+            } catch (e) {
+                stop();
+            }
         };
 
         const scheduler = () => {
-            while (nextNote.current < audioCtx.current.currentTime + 0.1) {
-                scheduleNote(beatRef.current, nextNote.current);
-                nextNote.current += 60.0 / bpmRef.current;
-                beatRef.current = (beatRef.current + 1) % getBeats(sigRef.current);
+            try {
+                while (nextNote.current < audioCtx.current.currentTime + 0.1) {
+                    scheduleNote(beatRef.current, nextNote.current);
+                    nextNote.current += 60.0 / bpmRef.current;
+                    beatRef.current = (beatRef.current + 1) % getBeats(sigRef.current);
+                }
+                schedulerRef.current = setTimeout(scheduler, 25);
+            } catch (e) {
+                stop();
             }
-            schedulerRef.current = setTimeout(scheduler, 25);
         };
 
         const start = () => { initAudio(); beatRef.current = 0; nextNote.current = audioCtx.current.currentTime; setIsPlaying(true); scheduler(); };
@@ -422,7 +436,7 @@
                     </div>
 
                     {/* Version */}
-                    <div style={{ textAlign:'center', marginTop:12, fontFamily:MONO, fontSize:10, letterSpacing:'0.08em', color:t.textFaint }}>v1.4.0</div>
+                    <div style={{ textAlign:'center', marginTop:12, fontFamily:MONO, fontSize:10, letterSpacing:'0.08em', color:t.textFaint }}>v1.4.1</div>
                 </div>
 
                 {/* Help Modal */}
