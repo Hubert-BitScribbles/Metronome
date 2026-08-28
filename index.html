@@ -189,6 +189,7 @@
         const [showAbout, setShowAbout]     = useState(false);
         const [pressedBtn, setPressedBtn]   = useState(null);
         const [accentBeat, setAccentBeat]   = useState(() => { try { return localStorage.getItem('bs-accent') === 'true'; } catch { return false; } });
+        const [upToEleven, setUpToEleven]   = useState(() => { try { return localStorage.getItem('bs-eleven') === 'true'; } catch { return false; } });
 
         const audioCtx     = useRef(null);
         const nextNote     = useRef(0);
@@ -197,6 +198,7 @@
         const beatRef      = useRef(0);
         const sigRef       = useRef(timeSig);
         const accentRef    = useRef(accentBeat);
+        const elevenRef    = useRef(upToEleven);
         const lpTimer      = useRef(null);
 
         useEffect(() => { bpmRef.current = bpm; }, [bpm]);
@@ -208,10 +210,17 @@
             }
         }, [timeSig]);
         useEffect(() => { accentRef.current = accentBeat; }, [accentBeat]);
+        useEffect(() => { elevenRef.current = upToEleven; }, [upToEleven]);
 
         const toggleAccent = () => setAccentBeat(a => {
             const next = !a;
             try { localStorage.setItem('bs-accent', String(next)); } catch {}
+            return next;
+        });
+
+        const toggleEleven = () => setUpToEleven(e => {
+            const next = !e;
+            try { localStorage.setItem('bs-eleven', String(next)); } catch {}
             return next;
         });
 
@@ -228,7 +237,8 @@
             osc.connect(g); g.connect(ctx.destination);
             osc.frequency.value = (accentRef.current && isDownbeat) ? 660 : 500;
             osc.type = 'sine';
-            const vol = (accentRef.current && isDownbeat) ? 0.45 : 0.3;
+            const base = elevenRef.current ? 0.6 : 0.3;
+            const vol = (accentRef.current && isDownbeat) ? base * 1.5 : base;
             g.gain.setValueAtTime(vol, time);
             g.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
             osc.start(time); osc.stop(time + 0.1);
@@ -428,15 +438,16 @@
                                 })}
                             </div>
 
-                            {/* Accent toggle */}
-                            <div style={{ borderTop:'1px solid ' + t.divider, paddingTop:12, display:'flex', justifyContent:'center' }}>
+                            {/* Toggles */}
+                            <div style={{ borderTop:'1px solid ' + t.divider, paddingTop:12, display:'flex', flexDirection:'column', gap:10, alignItems:'center' }}>
                                 <Toggle on={accentBeat} onToggle={toggleAccent} label="ACCENT BEAT ONE" t={t}/>
+                                <Toggle on={upToEleven} onToggle={toggleEleven} label="UP TO ELEVEN 🎸" t={t}/>
                             </div>
                         </div>
                     </div>
 
                     {/* Version */}
-                    <div style={{ textAlign:'center', marginTop:12, fontFamily:MONO, fontSize:10, letterSpacing:'0.08em', color:t.textFaint }}>v1.4.1</div>
+                    <div style={{ textAlign:'center', marginTop:12, fontFamily:MONO, fontSize:10, letterSpacing:'0.08em', color:t.textFaint }}>v1.5.0</div>
                 </div>
 
                 {/* Help Modal */}
@@ -447,6 +458,7 @@
                     <Section title="Time Signatures">Choose from 2/4, 3/4, 4/4, 5/4, or 6/8. The beat dots update to match.</Section>
                     <Section title="Beat Indicators"><span style={{ color:AMBER }}>Amber</span> marks beat one. <span style={{ color:TEAL }}>Teal</span> marks the rest. Each dot pulses and glows on every hit.</Section>
                     <Section title="Accent Beat One">Toggle this on to play beat one at a higher pitch (660Hz) and slightly louder than the other beats. Useful for feeling the start of each bar at fast tempos. Off by default. Your preference is saved automatically.</Section>
+                    <Section title="Up to Eleven 🎸">Doubles the output volume — for when you need the click to cut through a loud guitar or drummer. Named in honour of Spinal Tap's legendary amp. Your preference is saved automatically.</Section>
                     <Section title="Light / Dark Mode">Tap the sun or moon icon in the header to switch themes. Your preference is saved automatically.</Section>
                 </Modal>
 
