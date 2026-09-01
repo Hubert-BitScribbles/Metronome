@@ -232,16 +232,34 @@
         };
 
         const playClick = (time, isDownbeat) => {
-            const ctx = audioCtx.current;
-            const osc = ctx.createOscillator(), g = ctx.createGain();
-            osc.connect(g); g.connect(ctx.destination);
-            osc.frequency.value = (accentRef.current && isDownbeat) ? 660 : 500;
-            osc.type = 'sine';
+            const ctx  = audioCtx.current;
             const base = elevenRef.current ? 0.6 : 0.3;
-            const vol = (accentRef.current && isDownbeat) ? base * 1.5 : base;
-            g.gain.setValueAtTime(vol, time);
-            g.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
-            osc.start(time); osc.stop(time + 0.1);
+            const vol  = (accentRef.current && isDownbeat) ? base * 1.5 : base;
+
+            // Noise burst for the percussive "tick" body
+            const bufferSize = ctx.sampleRate * 0.04;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data   = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
+
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+
+            // Bandpass filter — centre around 1800Hz for a woody "tick" character
+            const filter = ctx.createBiquadFilter();
+            filter.type            = 'bandpass';
+            filter.frequency.value = isDownbeat && accentRef.current ? 2200 : 1800;
+            filter.Q.value         = 0.8;
+
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(vol, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            noise.start(time);
+            noise.stop(time + 0.04);
         };
 
         const scheduleNote = (beat, time) => {
@@ -447,7 +465,7 @@
                     </div>
 
                     {/* Version */}
-                    <div style={{ textAlign:'center', marginTop:12, fontFamily:MONO, fontSize:10, letterSpacing:'0.08em', color:t.textFaint }}>v1.5.0</div>
+                    <div style={{ textAlign:'center', marginTop:12, fontFamily:MONO, fontSize:10, letterSpacing:'0.08em', color:t.textFaint }}>v1.5.1</div>
                 </div>
 
                 {/* Help Modal */}
