@@ -235,31 +235,37 @@
             const ctx  = audioCtx.current;
             const base = elevenRef.current ? 0.6 : 0.3;
             const vol  = (accentRef.current && isDownbeat) ? base * 1.5 : base;
+            const freq = (accentRef.current && isDownbeat) ? 1200 : 1000;
 
-            // Noise burst for the percussive "tick" body
-            const bufferSize = ctx.sampleRate * 0.04;
-            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-            const data   = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
+            // Sharp sine transient — gives a tonal "tick" centre
+            const osc   = ctx.createOscillator();
+            const oGain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            oGain.gain.setValueAtTime(vol, time);
+            oGain.gain.exponentialRampToValueAtTime(0.001, time + 0.012);
+            osc.connect(oGain); oGain.connect(ctx.destination);
+            osc.start(time); osc.stop(time + 0.012);
 
+            // Narrow noise click — adds the percussive attack edge
+            const bufSize = Math.floor(ctx.sampleRate * 0.008);
+            const buf  = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+            const data = buf.getChannelData(0);
+            for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1);
             const noise = ctx.createBufferSource();
-            noise.buffer = buffer;
+            noise.buffer = buf;
 
-            // Bandpass filter — centre around 1800Hz for a woody "tick" character
             const filter = ctx.createBiquadFilter();
-            filter.type            = 'bandpass';
-            filter.frequency.value = isDownbeat && accentRef.current ? 2200 : 1800;
-            filter.Q.value         = 0.8;
+            filter.type = 'bandpass';
+            filter.frequency.value = freq;
+            filter.Q.value = 3.5;
 
-            const gain = ctx.createGain();
-            gain.gain.setValueAtTime(vol, time);
-            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+            const nGain = ctx.createGain();
+            nGain.gain.setValueAtTime(vol * 0.6, time);
+            nGain.gain.exponentialRampToValueAtTime(0.001, time + 0.008);
 
-            noise.connect(filter);
-            filter.connect(gain);
-            gain.connect(ctx.destination);
-            noise.start(time);
-            noise.stop(time + 0.04);
+            noise.connect(filter); filter.connect(nGain); nGain.connect(ctx.destination);
+            noise.start(time); noise.stop(time + 0.008);
         };
 
         const scheduleNote = (beat, time) => {
