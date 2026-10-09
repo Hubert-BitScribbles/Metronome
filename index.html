@@ -13,10 +13,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Caveat:wght@700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
+    <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="theme-color" content="#16B3A3">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <meta name="theme-color" content="#14171C">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -177,6 +177,11 @@
         const [dark, setDark] = useState(() => { try { return localStorage.getItem('bs-theme') !== 'light'; } catch { return true; } });
         const t = dark ? themes.dark : themes.light;
         const toggleTheme = () => setDark(d => { const next = !d; try { localStorage.setItem('bs-theme', next ? 'dark' : 'light'); } catch {} return next; });
+        // Browser bar follows the top of the background gradient
+        useEffect(() => {
+            const m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute('content', dark ? '#14171C' : '#e8f7f6');
+        }, [dark]);
 
         const [bpm, setBpm]                 = useState(120);
         const [isPlaying, setIsPlaying]     = useState(false);

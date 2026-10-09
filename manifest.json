@@ -1,12 +1,12 @@
 {
-  "name": "Metronome by BitScribbles",
+  "name": "Metronome by bitScribbles",
   "short_name": "Metronome",
   "description": "A modern, precise metronome for musicians.",
-  "start_url": "/Metronome/index.html",
-  "scope": "/Metronome/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#14171C",
-  "theme_color": "#16B3A3",
+  "theme_color": "#14171C",
   "icons": [
     {
       "src": "icon-192.png",
@@ -17,6 +17,12 @@
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
