@@ -1,0 +1,15 @@
+{
+  "name": "metronome-build",
+  "private": true,
+  "description": "Build tools for Metronome. Edit ../src/app.jsx, then run `npm install` once and `npm run build` here; commit ../app.js with your change.",
+  "scripts": {
+    "build": "esbuild ../src/app.jsx --bundle --minify --format=iife --target=es2019,safari14 --define:process.env.NODE_ENV=\\\"production\\\" --outfile=../app.js",
+    "check": "cd .. && python3 checks/check.py"
+  },
+  "devDependencies": {
+    "esbuild": "0.23.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "axe-core": "4.10.2"
+  }
+}
