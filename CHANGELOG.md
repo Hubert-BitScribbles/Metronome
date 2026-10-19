@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.1 — 19 October 2026
+
+- **Open-source credits in full.** About → Credits links to **licenses.txt**: React, React DOM and scheduler (bundled into `app.js`), each with its full MIT licence, and the fonts' SIL Open Font License. `npm run build` rewrites it from esbuild's record of what it bundled, so it can't fall behind. Saved for offline use.
+
 ## 1.6.0 — 9 October 2026
 
 **New**
