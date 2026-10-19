@@ -1,2 +1,3 @@
 build/node_modules/
 checks/out/
+build/meta.json

@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-const VERSION = '1.6.0';
+const VERSION = '1.6.1';
 
 // ── Icons ───────────────────────────────────────────────────────
 const svgProps = (size) => ({ width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true, focusable:'false' });
@@ -580,7 +580,7 @@ const Metronome = () => {
                 </Section>
                 <Section t={t} title="Credits">
                     <P>Open source under the MIT licence. The code is on <a href="https://github.com/Hubert-BitScribbles/Metronome" target="_blank" rel="noopener noreferrer" style={{ color:t.link }}>GitHub</a>.</P>
-                    <P>Fonts: Space Grotesk, Inter, JetBrains Mono and Caveat, under the SIL Open Font License. Built with React (MIT licence).</P>
+                    <P>Built with React (MIT licence). Fonts: Space Grotesk, Inter, JetBrains Mono and Caveat, under the SIL Open Font License. The clicks are made by Metronome itself. <a href="licenses.txt" target="_blank" rel="noopener noreferrer" style={{ color:t.link }}>All the licences</a></P>
                     <P last>© 2026 bitScribbles</P>
                 </Section>
                 <div style={{ borderTop:'1px solid ' + t.divider, paddingTop:14, textAlign:'center', fontFamily:MONO, fontSize:10, letterSpacing:'0.08em', color:t.textMid }}>

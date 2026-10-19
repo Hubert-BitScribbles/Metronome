@@ -13,6 +13,7 @@ Live at **https://metronome.bitscribbles.com**, a Cloudflare Worker that serves 
 | `app.js` | Built from `src/app.jsx` — the file browsers actually run. Commit it with every change. |
 | `sw.js` | Service worker: saves the app so it opens offline (network first, saved copy as fallback) |
 | `fonts/` | Self-hosted Space Grotesk, Inter, JetBrains Mono and Caveat (SIL OFL, `fonts/OFL.txt`) |
+| `licenses.txt` | Written by `npm run build`: every open-source package in `app.js` with its full licence, and the fonts' licence. Linked from About → Credits. |
 | `manifest.json`, `*.png` | Install details and icons |
 | `design/` | Icon source (`metronome-icon.svg`) and `make-icons.py`, which rebuilds every icon size |
 | `build/` | Build tools (esbuild, React, axe-core). Kept out of the repo root so Cloudflare serves the site as plain files. |
@@ -42,4 +43,6 @@ iPhone keeps an old Home Screen icon until it is removed and re-added; the app i
 
 ## Licence
 
-MIT — see `LICENSE`. Fonts under the SIL Open Font License.
+MIT — see `LICENSE`. The names "Metronome" and "bitScribbles" and the logos aren't covered by it.
+
+`app.js` includes React, React DOM and scheduler (MIT); the fonts are under the SIL Open Font License. `licenses.txt`, rebuilt by `npm run build` from esbuild's record of what it bundled, has each one's full licence and is linked from About → Credits. The clicks are synthesised in the browser; there are no sound files.
