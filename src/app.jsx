@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-const VERSION = '1.6.1';
+const VERSION = '1.6.2';
 
 // ── Icons ───────────────────────────────────────────────────────
 const svgProps = (size) => ({ width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true, focusable:'false' });
@@ -562,7 +562,7 @@ const Metronome = () => {
             {/* About */}
             <Modal isOpen={showAbout} onClose={() => setShowAbout(false)} title="About" t={t}>
                 <Section t={t} title={'Metronome ' + VERSION}>A steady, good-looking metronome. Clicks are scheduled ahead with your browser's Web Audio clock, so the beat stays even when the screen is busy.</Section>
-                <Section t={t} title="Made by bitScribbles">
+                <Section t={t} title="Made by bitScribbles™">
                     <P>Small apps, carefully made. Every app starts as a scribble.</P>
                     <P last>This one started as a challenge from musician friends: make a metronome that doesn't suck. No ads, no sign-up, no silly fees, just a good click.</P>
                 </Section>
