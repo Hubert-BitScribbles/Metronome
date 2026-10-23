@@ -79,5 +79,23 @@ with sync_playwright() as p:
     print('offline reload renders:', 'Metronome' in pg.inner_text("body"),
           '| fonts offline:', pg.evaluate("document.fonts.check('700 20px \"Space Grotesk\"')"),
           '| kept 6/8:', pg.get_by_role("button", name="6/8").get_attribute("aria-pressed"))
+    ctx.set_offline(False)
+
+    # Help and About: the close button stays on screen and full size, opened and
+    # scrolled to the bottom, at iPhone Safari's visible size (portrait and sideways).
+    for w, h in [(390, 664), (844, 350)]:
+        pg.set_viewport_size({"width": w, "height": h})
+        for name in ["Help", "About"]:
+            pg.get_by_role("button", name=name, exact=True).click(); pg.wait_for_timeout(400)
+            def box():
+                r = pg.get_by_role("button", name="Close").bounding_box()
+                return r['y'] >= 0 and r['y'] + r['height'] <= h and r['height'] >= 44
+            opened = box()
+            pg.evaluate("document.querySelector('.dialog-body').scrollTop = 1e6"); pg.wait_for_timeout(150)
+            print(f'{w}x{h} {name}: close button on screen and 44 px when opened {opened}, after scrolling {box()}')
+            if name == "About":
+                print('  About links the website:', pg.locator('[role=dialog] a[href="https://bitscribbles.com"]').count() == 1)
+            pg.keyboard.press("Escape"); pg.wait_for_timeout(200)
+
     print('errors:', errs)
     b.close()
