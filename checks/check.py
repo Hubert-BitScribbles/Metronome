@@ -97,5 +97,21 @@ with sync_playwright() as p:
                 print('  About links the website:', pg.locator('[role=dialog] a[href="https://bitscribbles.com"]').count() == 1)
             pg.keyboard.press("Escape"); pg.wait_for_timeout(200)
 
+    # Volume: the slider glides 1–10; 11 is a button you tap; sliding comes back from 11
+    pg.set_viewport_size({"width": 390, "height": 844})
+    vol = pg.get_by_role("slider", name="Volume")
+    eleven = pg.get_by_role("button", name="Eleven — the loudest click")
+    label = lambda: pg.inner_text("#vol-label").replace("\n", " ")
+    print('volume starts at 7:', vol.input_value() == "7", '|', label())
+    vol.fill("9.3"); pg.wait_for_timeout(100)
+    print('slider glides (9.3):', vol.input_value() == "9.3", '| label', label(), '| 11 off:', eleven.get_attribute("aria-pressed") == "false")
+    eleven.click(); pg.wait_for_timeout(100)
+    print('tap 11 ->', eleven.get_attribute("aria-pressed") == "true", '| label', label(), '| slider kept at', vol.input_value())
+    pg.reload(); pg.wait_for_timeout(800)
+    print('11 remembered after reload:', pg.get_by_role("button", name="Eleven — the loudest click").get_attribute("aria-pressed") == "true")
+    pg.get_by_role("slider", name="Volume").fill("4"); pg.wait_for_timeout(100)
+    print('sliding comes back from 11:', pg.get_by_role("button", name="Eleven — the loudest click").get_attribute("aria-pressed") == "false", '| label', label())
+    audit(pg, 'volume (dark)')
+
     print('errors:', errs)
     b.close()

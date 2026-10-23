@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.0 — 23 October 2026
+
+- **Volume, and an 11 that's really louder.** "Up to Eleven" made the click only about 5.5 dB louder (measured), which sounds like "a bit louder". It's replaced by a **volume slider that glides from 1 to 10**, with an **11 button you have to tap**:
+  - 7 is the standard click (unchanged, and the default); each step is 3 dB, so 10 is about 9 dB louder and 1 about 18 dB quieter — handy for setting the click against music playing from another app.
+  - **11** is a different click: longer (35 ms), with a bright edge and a 3 kHz crack where phone speakers and ears are most sensitive. About 18 dB louder than 7 — roughly three times as loud — and soft-clipped so it never crackles.
+  - Moving the slider comes back from 11. If Up to Eleven was on, Metronome opens at 11.
+  - A safety limiter rounds off peaks at the top of the slider (an accented beat at 10 would otherwise have clipped). It doesn't touch the click below that.
+- New checks for the volume slider and the 11 button.
+
 ## 1.6.3 — 23 October 2026
 
 - **The ✕ on Help and About is always within reach.** It used to scroll away with the text, and on iPhone it could open tucked under the top edge. Now the title and ✕ stay fixed while only the text scrolls, the dialog is sized to the screen you can actually see (`dvh`, clear of the notch and home bar — same fix as Liquid Clock 1.6.3), and the ✕ is a full 44-point target. The scrolling text can be scrolled from the keyboard too.

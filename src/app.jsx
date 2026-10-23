@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-const VERSION = '1.6.3';
+const VERSION = '1.7.0';
 
 // ── Icons ───────────────────────────────────────────────────────
 const svgProps = (size) => ({ width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true, focusable:'false' });
@@ -96,6 +96,85 @@ const getBeats = (s) => BEATS[s] || 4;
 const MIN_BPM = 40, MAX_BPM = 240;
 const clampBpm = (v) => Math.max(MIN_BPM, Math.min(MAX_BPM, Math.round(v)));
 
+// ── Sound ───────────────────────────────────────────────────────
+// Volume 1–10 moves the normal click in 3 dB steps around 7 (today's click):
+// 1 is 18 dB quieter, 10 is 9 dB louder. 11 is a different, louder click.
+const volumeGain = (v) => Math.pow(10, (v - 7) * 3 / 20);
+
+const makeNoise = (ctx, seconds) => {
+    const n = Math.floor(ctx.sampleRate * seconds);
+    const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    return src;
+};
+// A short burst of `node` from `time`, fading out over `length` seconds
+const burst = (ctx, node, dest, time, level, length) => {
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(level, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + length);
+    node.connect(g); g.connect(dest);
+    node.start(time); node.stop(time + length);
+    return g;
+};
+
+// Two signal paths, built once:
+//  volume → a safety limiter that does nothing below 0.7 and rounds off anything louder
+//           (so 9 and 10 never crackle) → speakers
+//  eleven → a soft clip that lets the loud click be driven hard without distortion → speakers
+const makeBuses = (ctx, volume) => {
+    const shaper = (curveFn, oversample) => {
+        const N = 4096, c = new Float32Array(N);
+        for (let i = 0; i < N; i++) c[i] = curveFn(i / (N - 1) * 2 - 1);
+        const w = ctx.createWaveShaper(); w.curve = c; w.oversample = oversample;
+        return w;
+    };
+    const vol = ctx.createGain(); vol.gain.value = volumeGain(volume);
+    const half = ctx.createGain(); half.gain.value = 0.5;       // the curve covers inputs up to ±2
+    const safety = shaper((u) => {
+        const x = u * 2, a = Math.abs(x);
+        return Math.sign(x) * (a <= 0.7 ? a : 0.7 + 0.25 * Math.tanh((a - 0.7) / 0.25));
+    }, 'none');
+    vol.connect(half); half.connect(safety); safety.connect(ctx.destination);
+
+    const drive = ctx.createGain(); drive.gain.value = 0.6;
+    const clip = shaper((u) => Math.tanh(u * 2.5) / Math.tanh(2.5), '4x');
+    const out = ctx.createGain(); out.gain.value = 0.92;
+    drive.connect(clip); clip.connect(out); out.connect(ctx.destination);
+    return { ctx, volume: vol, eleven: drive };
+};
+
+// Today's click, unchanged: a 12 ms 1000 Hz tick plus an 8 ms noise edge
+// (1100 / 1200 Hz and a little louder on accented beats)
+const normalClick = (ctx, dest, time, accent) => {
+    const vol  = 0.3 * [1, 1.25, 1.5][accent];
+    const freq = [1000, 1100, 1200][accent];
+    const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = freq;
+    burst(ctx, osc, dest, time, vol, 0.012);
+    const noise = makeNoise(ctx, 0.008);
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 3.5;
+    const g = ctx.createGain(); g.gain.setValueAtTime(vol * 0.6, time); g.gain.exponentialRampToValueAtTime(0.001, time + 0.008);
+    noise.connect(f); f.connect(g); g.connect(dest); noise.start(time); noise.stop(time + 0.008);
+};
+
+// Eleven: about three times as loud (+18 dB). A longer body (35 ms), a bright square-wave
+// edge and a 3 kHz noise crack — 2–5 kHz is where phone speakers and ears are most sensitive.
+const loudClick = (ctx, dest, time, accent) => {
+    const v    = [1, 1.2, 1.4][accent];
+    const freq = [1000, 1100, 1200][accent];
+    const body = ctx.createOscillator(); body.frequency.value = freq;
+    burst(ctx, body, dest, time, 0.9 * v, 0.035);
+    const edge = ctx.createOscillator(); edge.type = 'square'; edge.frequency.value = freq;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5000;
+    const eg = ctx.createGain(); eg.gain.setValueAtTime(0.5 * v, time); eg.gain.exponentialRampToValueAtTime(0.001, time + 0.025);
+    edge.connect(lp); lp.connect(eg); eg.connect(dest); edge.start(time); edge.stop(time + 0.025);
+    const noise = makeNoise(ctx, 0.012);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3000; bp.Q.value = 1.5;
+    const ng = ctx.createGain(); ng.gain.setValueAtTime(0.8 * v, time); ng.gain.exponentialRampToValueAtTime(0.001, time + 0.012);
+    noise.connect(bp); bp.connect(ng); ng.connect(dest); noise.start(time); noise.stop(time + 0.012);
+};
+
 // ── Components ──────────────────────────────────────────────────
 function Modal({ isOpen, onClose, title, children, t }) {
     const boxRef   = useRef(null);
@@ -185,6 +264,7 @@ const Metronome = () => {
     const [pressedBtn, setPressedBtn]   = useState(null);
     const [accentBeat, setAccentBeat]   = useState(() => store.get('bs-accent') === 'true');
     const [upToEleven, setUpToEleven]   = useState(() => store.get('bs-eleven') === 'true');
+    const [volume, setVolume]           = useState(() => { const v = parseFloat(store.get('bs-volume')); return v >= 1 && v <= 10 ? v : 7; });
 
     const audioCtx     = useRef(null);
     const nextNote     = useRef(0);
@@ -194,6 +274,8 @@ const Metronome = () => {
     const sigRef       = useRef(timeSig);
     const accentRef    = useRef(accentBeat);
     const elevenRef    = useRef(upToEleven);
+    const volumeRef    = useRef(volume);
+    const buses        = useRef(null);
     const playingRef   = useRef(false);
     const lpTimer      = useRef(null);
     const wakeRef      = useRef(null);
@@ -212,50 +294,35 @@ const Metronome = () => {
 
     const toggleAccent = () => setAccentBeat(a => { store.set('bs-accent', String(!a)); return !a; });
     const toggleEleven = () => setUpToEleven(e => { store.set('bs-eleven', String(!e)); return !e; });
+    // Sliding the volume always comes back from 11 to the slider
+    const changeVolume = (v) => {
+        setVolume(v); store.set('bs-volume', v.toFixed(1));
+        if (elevenRef.current) { setUpToEleven(false); store.set('bs-eleven', 'false'); }
+    };
+    useEffect(() => {
+        volumeRef.current = volume;
+        const b = buses.current;
+        if (b) b.volume.gain.setTargetAtTime(volumeGain(volume), b.ctx.currentTime, 0.02);
+    }, [volume]);
 
     // ── Audio ──
     const initAudio = () => {
         // iPhone: ask for "playback" audio so the click still sounds with the
         // ring/silent switch on (Safari 17 and later; ignored elsewhere).
         try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}
-        if (!audioCtx.current) { audioCtx.current = new (window.AudioContext || window.webkitAudioContext)(); setAudioReady(true); }
+        if (!audioCtx.current) {
+            audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
+            buses.current = makeBuses(audioCtx.current, volumeRef.current);
+            setAudioReady(true);
+        }
         if (audioCtx.current.state !== 'running') audioCtx.current.resume().catch(() => {});
     };
 
     // level: 2 = beat one (accented), 1 = secondary accent (6/8 beat four), 0 = other beats
     const playClick = (time, level) => {
-        const ctx    = audioCtx.current;
-        const base   = elevenRef.current ? 0.6 : 0.3;
         const accent = accentRef.current ? level : 0;
-        const vol    = base * [1, 1.25, 1.5][accent];
-        const freq   = [1000, 1100, 1200][accent];
-
-        // Sharp sine transient — the tonal "tick"
-        const osc   = ctx.createOscillator();
-        const oGain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        oGain.gain.setValueAtTime(vol, time);
-        oGain.gain.exponentialRampToValueAtTime(0.001, time + 0.012);
-        osc.connect(oGain); oGain.connect(ctx.destination);
-        osc.start(time); osc.stop(time + 0.012);
-
-        // Narrow noise burst — the percussive attack
-        const bufSize = Math.floor(ctx.sampleRate * 0.008);
-        const buf  = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1);
-        const noise = ctx.createBufferSource();
-        noise.buffer = buf;
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = freq;
-        filter.Q.value = 3.5;
-        const nGain = ctx.createGain();
-        nGain.gain.setValueAtTime(vol * 0.6, time);
-        nGain.gain.exponentialRampToValueAtTime(0.001, time + 0.008);
-        noise.connect(filter); filter.connect(nGain); nGain.connect(ctx.destination);
-        noise.start(time); noise.stop(time + 0.008);
+        if (elevenRef.current) loudClick(audioCtx.current, buses.current.eleven, time, accent);
+        else normalClick(audioCtx.current, buses.current.volume, time, accent);
     };
 
     const scheduleNote = (beat, time) => {
@@ -372,6 +439,8 @@ const Metronome = () => {
     const beats     = Array.from({ length: getBeats(timeSig) }, (_, i) => i);
     const groups    = timeSig === '6/8' ? [beats.slice(0, 3), beats.slice(3)] : [beats];
     const sliderPct = ((bpm - MIN_BPM) / (MAX_BPM - MIN_BPM)) * 100;
+    const volPct    = ((volume - 1) / 9) * 100;
+    const volBg     = 'linear-gradient(to right,' + TEAL + ' 0%,' + TEAL + ' ' + volPct + '%,' + t.sliderTrack + ' ' + volPct + '%,' + t.sliderTrack + ' 100%)';
     const sliderBg  = 'linear-gradient(to right,' + TEAL + ' 0%,' + TEAL + ' ' + sliderPct + '%,' + t.sliderTrack + ' ' + sliderPct + '%,' + t.sliderTrack + ' 100%)';
 
     const gBtn = (extra={}) => ({
@@ -529,10 +598,28 @@ const Metronome = () => {
                         </div>
                     </div>
 
-                    {/* Toggles */}
-                    <div style={{ borderTop:'1px solid ' + t.divider, paddingTop:10, display:'flex', flexDirection:'column', gap:4, alignItems:'center' }}>
+                    {/* Accent, then volume: the slider glides from 1 to 10; 11 has to be tapped */}
+                    <div style={{ borderTop:'1px solid ' + t.divider, paddingTop:10, display:'flex', flexDirection:'column', gap:8, alignItems:'center' }}>
                         <Toggle on={accentBeat} onToggle={toggleAccent} label="ACCENT BEAT ONE" t={t}/>
-                        <Toggle on={upToEleven} onToggle={toggleEleven} label="UP TO ELEVEN 🎸" t={t}/>
+                        <div role="group" aria-labelledby="vol-label" style={{ width:'100%' }}>
+                            <div id="vol-label" style={{ fontFamily:MONO, fontSize:10, letterSpacing:'0.12em', textTransform:'uppercase', color:t.label, textAlign:'center', marginBottom:2 }}>
+                                Volume <span style={{ color:t.text, fontVariantNumeric:'tabular-nums' }}>{upToEleven ? '11 🎸' : Math.round(volume)}</span>
+                            </div>
+                            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                                <input type="range" min="1" max="10" step="0.1" value={volume} className="volume"
+                                    aria-label="Volume" aria-valuetext={upToEleven ? 'Eleven' : Math.round(volume) + ' of 10'}
+                                    onChange={(e) => changeVolume(Number(e.target.value))}
+                                    style={{ background:volBg, opacity: upToEleven ? 0.45 : 1, flex:1, minWidth:0, width:'auto', transition:'opacity 0.2s' }}/>
+                                <button onClick={toggleEleven} aria-pressed={upToEleven} aria-label="Eleven — the loudest click"
+                                    title="Tap for eleven: the loudest click"
+                                    style={{ ...gBtn({ fontFamily:GROTESK, fontWeight:700, fontSize:15, width:44, height:44, padding:0, borderRadius:999, flexShrink:0 }),
+                                        background: upToEleven ? AMBER : t.btnBg,
+                                        borderColor: upToEleven ? AMBER : t.btnBorder,
+                                        color: upToEleven ? INK : t.text,
+                                        boxShadow: upToEleven ? '0 0 14px rgba(242,177,52,0.55)' : 'none',
+                                    }}>11</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -549,7 +636,10 @@ const Metronome = () => {
                 <Section t={t} title="Time Signatures">Choose 2/4, 3/4, 4/4, 5/4 or 6/8. 6/8 is counted in two groups of three, so its dots are grouped, and with Accent Beat One on, beat four gets a lighter accent too.</Section>
                 <Section t={t} title="Beat Dots"><span style={{ color: dark ? AMBER : '#8a5a00' }}>Amber</span> marks beat one; <span style={{ color:t.link }}>teal</span> marks the rest.</Section>
                 <Section t={t} title="Accent Beat One">Plays beat one higher (1200 Hz instead of 1000 Hz) and a little louder, so you can feel the start of each bar. Remembered on this device.</Section>
-                <Section t={t} title="Up to Eleven 🎸">Doubles the volume of the click, for when it has to cut through a loud band. Named for Spinal Tap's famous amp. Remembered on this device.</Section>
+                <Section t={t} title="Volume, and Eleven 🎸">
+                    <P>Slide to set the click against your music: 7 is the standard click, 10 the loudest regular setting, 1 quiet enough for late-night practice. Your phone's volume still sets the overall level.</P>
+                    <P last>For a loud band, tap <b>11</b>: a brighter, longer click, about three times as loud as 7. Named for Spinal Tap's famous amp. Moving the slider goes back to it. Both are remembered on this device.</P>
+                </Section>
                 <Section t={t} title="No Sound on iPhone?">
                     <P>Turn the volume up with the side buttons. On recent iPhones the click plays even with the silent switch on; on older iOS versions, switch silent mode off.</P>
                     <P last>If a phone call or another app took over the sound, tap Stop, then Start.</P>

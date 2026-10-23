@@ -2,7 +2,7 @@
 // Network first (so updates show up straight away when online), falling back
 // to the saved copy when offline or when the network takes more than 3 seconds.
 // Bump CACHE with each release so old copies are cleared.
-const CACHE = 'metronome-1.6.3';
+const CACHE = 'metronome-1.7.0';
 const ASSETS = [
     './',
     'app.js',
