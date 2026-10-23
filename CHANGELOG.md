@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.3 — 23 October 2026
+
+- **The ✕ on Help and About is always within reach.** It used to scroll away with the text, and on iPhone it could open tucked under the top edge. Now the title and ✕ stay fixed while only the text scrolls, the dialog is sized to the screen you can actually see (`dvh`, clear of the notch and home bar — same fix as Liquid Clock 1.6.3), and the ✕ is a full 44-point target. The scrolling text can be scrolled from the keyboard too.
+- **About links the website:** "More of our apps, and the studio behind them, at bitscribbles.com."
+- New check: the ✕ stays on screen, opened and scrolled, in portrait and sideways at iPhone size.
+
 ## 1.6.2 — 20 October 2026
 
 - **bitScribbles™.** About's "Made by bitScribbles" heading carries the ™ sign, now that the trademark search came back clear.

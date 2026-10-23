@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-const VERSION = '1.6.2';
+const VERSION = '1.6.3';
 
 // ── Icons ───────────────────────────────────────────────────────
 const svgProps = (size) => ({ width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true, focusable:'false' });
@@ -120,16 +120,19 @@ function Modal({ isOpen, onClose, title, children, t }) {
     const id = 'dlg-' + title.replace(/\W+/g, '-').toLowerCase();
     return (
         <div onClick={(e) => e.target === e.currentTarget && onClose()}
-            style={{ position:'fixed', inset:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', padding:16, background:'rgba(20,23,28,0.6)', backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)' }}>
-            <div ref={boxRef} role="dialog" aria-modal="true" aria-labelledby={id}
-                style={{ background:t.modalBg, border:'1px solid ' + t.cardBorder, borderRadius:20, boxShadow:t.cardShadow, maxWidth:460, width:'100%', maxHeight:'88vh', overflowY:'auto', padding:28, animation: reduceMotion ? 'none' : 'modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1)' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:22 }}>
+            className="dialog-overlay"
+            style={{ background:'rgba(20,23,28,0.6)', backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)' }}>
+            {/* The header (title and ✕) never scrolls; only the body does. Height is capped
+                at the visible screen in index.html (.dialog), so the ✕ is always reachable. */}
+            <div ref={boxRef} role="dialog" aria-modal="true" aria-labelledby={id} className="dialog"
+                style={{ background:t.modalBg, border:'1px solid ' + t.cardBorder, borderRadius:20, boxShadow:t.cardShadow, animation: reduceMotion ? 'none' : 'modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1)' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, padding:'18px 18px 14px 28px', borderBottom:'1px solid ' + t.divider, flexShrink:0 }}>
                     <h2 id={id} style={{ margin:0, fontFamily:GROTESK, fontWeight:700, fontSize:18, color:t.text }}>{title}</h2>
-                    <button ref={closeRef} onClick={onClose} aria-label="Close" style={{ background:t.btnBg, border:'1px solid ' + t.btnBorder, borderRadius:12, padding:8, display:'flex', color:t.textMid, cursor:'pointer' }}>
-                        <X size={17}/>
+                    <button ref={closeRef} onClick={onClose} aria-label="Close" style={{ background:t.btnBg, border:'1px solid ' + t.btnBorder, borderRadius:12, width:44, height:44, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', color:t.textMid, cursor:'pointer' }}>
+                        <X size={18}/>
                     </button>
                 </div>
-                <div style={{ fontFamily:INTER, fontSize:14, lineHeight:1.65, color:t.textBody }}>{children}</div>
+                <div className="dialog-body" tabIndex={0} style={{ padding:'18px 28px 24px', fontFamily:INTER, fontSize:14, lineHeight:1.65, color:t.textBody }}>{children}</div>
             </div>
         </div>
     );
@@ -564,7 +567,8 @@ const Metronome = () => {
                 <Section t={t} title={'Metronome ' + VERSION}>A steady, good-looking metronome. Clicks are scheduled ahead with your browser's Web Audio clock, so the beat stays even when the screen is busy.</Section>
                 <Section t={t} title="Made by bitScribbles™">
                     <P>Small apps, carefully made. Every app starts as a scribble.</P>
-                    <P last>This one started as a challenge from musician friends: make a metronome that doesn't suck. No ads, no sign-up, no silly fees, just a good click.</P>
+                    <P>This one started as a challenge from musician friends: make a metronome that doesn't suck. No ads, no sign-up, no silly fees, just a good click.</P>
+                    <P last>More of our apps, and the studio behind them, at <a href="https://bitscribbles.com" target="_blank" rel="noopener noreferrer" style={{ color:t.link }}>bitscribbles.com</a>.</P>
                 </Section>
                 <Section t={t} title="Private by Design">No account, no ads, no tracking, and nothing is sent anywhere. Your presets and settings are remembered in this browser only.</Section>
                 <Section t={t} title="Disclaimer">Provided as is, for practice, without warranty. For professional recording, use your studio's own clock.</Section>
