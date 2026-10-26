@@ -1,4 +1,4 @@
-﻿Metronome 1.7.0 — licences
+﻿Metronome 1.7.1 — licences
 
 Metronome is free and open source: https://github.com/Hubert-BitScribbles/Metronome
 Its own code is under the MIT licence (in the repository). The names "Metronome"

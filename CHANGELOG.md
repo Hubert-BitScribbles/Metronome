@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.1 — 26 October 2026
+
+- **bitScribbles Studio Ltd.** Metronome now belongs to bitScribbles Studio Ltd., incorporated in British Columbia on 26 October 2026 (BC1613702). The LICENSE names the company (it still read "Hubert-Vibe-Code" from 2025), and About's copyright line reads "© 2025–2026 bitScribbles Studio Ltd.". About already links to bitscribbles.com.
+
 ## 1.7.0 — 23 October 2026
 
 - **Volume, and an 11 that's really louder.** "Up to Eleven" made the click only about 5.5 dB louder (measured), which sounds like "a bit louder". It's replaced by a **volume slider that glides from 1 to 10**, with an **11 button you have to tap**:
