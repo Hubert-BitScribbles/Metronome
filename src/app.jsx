@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-const VERSION = '1.7.1';
+const VERSION = '1.7.2';
 
 // ── Icons ───────────────────────────────────────────────────────
 const svgProps = (size) => ({ width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true, focusable:'false' });
@@ -630,7 +630,10 @@ const Metronome = () => {
             {/* Help */}
             <Modal isOpen={showHelp} onClose={() => setShowHelp(false)} title="How to Use" t={t}>
                 <Section t={t} title="Getting Started">Tap Start. The first beat plays straight away, and the screen stays on while it plays.</Section>
-                <Section t={t} title="Setting the Tempo">Drag the slider, use −5, −1, +1 and +5 for fine steps, or tap a preset. Changes take effect straight away, even while it's playing.</Section>
+                <Section t={t} title="Setting the Tempo">
+                    <P>Drag the slider, use −5, −1, +1 and +5 for fine steps, or tap a preset. Changes take effect straight away, even while it's playing.</P>
+                    <P last><b>Why it goes to 240:</b> the classic wind-up metronome stops at 208, which is too slow for up-tempo jazz, thrash or a bluegrass breakdown. It also lets you hear every eighth note: set double your tempo, so 240 clicks eighth notes at 120.</P>
+                </Section>
                 <Section t={t} title="Tap Tempo">Tap the <b>Tap</b> button in time with the music, four or five times. Metronome sets the BPM from your last few taps. Wait two seconds to start over.</Section>
                 <Section t={t} title="Presets">Tap a preset to load it. To save the current tempo to a preset, press and hold it for about half a second, until it shows ✓ saved. Presets are remembered on this device.</Section>
                 <Section t={t} title="Time Signatures">Choose 2/4, 3/4, 4/4, 5/4 or 6/8. 6/8 is counted in two groups of three, so its dots are grouped, and with Accent Beat One on, beat four gets a lighter accent too.</Section>
@@ -638,7 +641,7 @@ const Metronome = () => {
                 <Section t={t} title="Accent Beat One">Plays beat one higher (1200 Hz instead of 1000 Hz) and a little louder, so you can feel the start of each bar. Remembered on this device.</Section>
                 <Section t={t} title="Volume, and Eleven 🎸">
                     <P>Slide to set the click against your music: 7 is the standard click, 10 the loudest regular setting, 1 quiet enough for late-night practice. Your phone's volume still sets the overall level.</P>
-                    <P last>For a loud band, tap <b>11</b>: a brighter, longer click, about three times as loud as 7. Named for Spinal Tap's famous amp. Moving the slider goes back to it. Both are remembered on this device.</P>
+                    <P last>For a loud band, tap <b>11</b>: a brighter, longer click, about three times as loud as 7. Named for Spinal Tap's famous amp. Why 11? It's one louder. Moving the slider goes back to it. Both are remembered on this device.</P>
                 </Section>
                 <Section t={t} title="No Sound on iPhone?">
                     <P>Turn the volume up with the side buttons. On recent iPhones the click plays even with the silent switch on; on older iOS versions, switch silent mode off.</P>
