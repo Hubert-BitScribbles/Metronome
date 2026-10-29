@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.2 — 28 October 2026
+
+- **Help explains why the tempo goes to 240:** the classic wind-up metronome stops at 208, too slow for up-tempo jazz, thrash or a bluegrass breakdown; and setting double your tempo clicks every eighth note (240 = eighths at 120).
+- **Volume, and Eleven:** "Why 11? It's one louder."
+
 ## 1.7.1 — 26 October 2026
 
 - **bitScribbles Studio Ltd.** Metronome now belongs to bitScribbles Studio Ltd., incorporated in British Columbia on 26 October 2026 (BC1613702). The LICENSE names the company (it still read "Hubert-Vibe-Code" from 2025), and About's copyright line reads "© 2025–2026 bitScribbles Studio Ltd.". About already links to bitscribbles.com.
