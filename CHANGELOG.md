@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.3 — 28 October 2026
+
+- **Help compares 11 with 10, not 7.** 11 sits next to 10 on the slider, so that's the comparison people make. Re-measured (A-weighted): 11 is 8.9 dB louder than 10 — nearly twice as loud — and 17.7 dB louder than the standard click at 7, over three times as loud. Help now says both.
+
 ## 1.7.2 — 28 October 2026
 
 - **Help explains why the tempo goes to 240:** the classic wind-up metronome stops at 208, too slow for up-tempo jazz, thrash or a bluegrass breakdown; and setting double your tempo clicks every eighth note (240 = eighths at 120).

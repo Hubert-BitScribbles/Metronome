@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-const VERSION = '1.7.2';
+const VERSION = '1.7.3';
 
 // ── Icons ───────────────────────────────────────────────────────
 const svgProps = (size) => ({ width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true, focusable:'false' });
@@ -641,7 +641,7 @@ const Metronome = () => {
                 <Section t={t} title="Accent Beat One">Plays beat one higher (1200 Hz instead of 1000 Hz) and a little louder, so you can feel the start of each bar. Remembered on this device.</Section>
                 <Section t={t} title="Volume, and Eleven 🎸">
                     <P>Slide to set the click against your music: 7 is the standard click, 10 the loudest regular setting, 1 quiet enough for late-night practice. Your phone's volume still sets the overall level.</P>
-                    <P last>For a loud band, tap <b>11</b>: a brighter, longer click, about three times as loud as 7. Named for Spinal Tap's famous amp. Why 11? It's one louder. Moving the slider goes back to it. Both are remembered on this device.</P>
+                    <P last>For a loud band, tap <b>11</b>: a brighter, longer click, nearly twice as loud as 10 (and over three times as loud as the standard click at 7). Named for Spinal Tap's famous amp. Why 11? It's one louder. Moving the slider goes back to it. Both are remembered on this device.</P>
                 </Section>
                 <Section t={t} title="No Sound on iPhone?">
                     <P>Turn the volume up with the side buttons. On recent iPhones the click plays even with the silent switch on; on older iOS versions, switch silent mode off.</P>
