@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-const VERSION = '1.7.3';
+const VERSION = '1.7.4';
 
 // ── Icons ───────────────────────────────────────────────────────
 const svgProps = (size) => ({ width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true, focusable:'false' });
@@ -666,12 +666,13 @@ const Metronome = () => {
                 <Section t={t} title="Private by Design">No account, no ads, no tracking, and nothing is sent anywhere. Your presets and settings are remembered in this browser only.</Section>
                 <Section t={t} title="Disclaimer">Provided as is, for practice, without warranty. For professional recording, use your studio's own clock.</Section>
                 <Section t={t} title="Support">
-                    <P>Ideas, problems, a feature you'd like: write any time. Metronome is free, with no ads or paid version. If it helps your practice, you can buy me a coffee.</P>
+                    <P>Ideas, problems, a feature you'd like: write any time.</P>
+                    <P>Metronome is free and stays free, with no ads or paid version. If it's helped your practice, you can help pay for hosting, testing and time. Contributing is entirely optional: Metronome works fully without it.</P>
                     <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:10 }}>
                         <a href={'mailto:support@bitscribbles.com?subject=' + encodeURIComponent('Metronome ' + VERSION)}
                             style={{ display:'inline-block', background:TEAL, color:INK, fontFamily:INTER, fontWeight:600, fontSize:13, padding:'9px 16px', borderRadius:999, textDecoration:'none' }}>Send feedback</a>
-                        <a href="https://www.buymeacoffee.com/bitscribbles" target="_blank" rel="noopener noreferrer"
-                            style={{ display:'inline-block', background:AMBER, color:INK, fontFamily:INTER, fontWeight:600, fontSize:13, padding:'9px 16px', borderRadius:999, textDecoration:'none' }}>☕ Buy me a coffee</a>
+                        <a href="https://bitscribbles.com/upnext.html#contribute" target="_blank" rel="noopener noreferrer"
+                            style={{ display:'inline-block', background:AMBER, color:INK, fontFamily:INTER, fontWeight:600, fontSize:13, padding:'9px 16px', borderRadius:999, textDecoration:'none' }}>Contribute</a>
                     </div>
                     <P last><span style={{ display:'block', marginTop:8, fontSize:13 }}>support@bitscribbles.com</span></P>
                 </Section>
