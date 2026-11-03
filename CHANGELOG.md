@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.4 — 3 November 2026
+
+- **About → Support: Contribute instead of Buy me a coffee.** The button now opens the Contribute section of bitscribbles.com's <upNext/> page (`upnext.html#contribute`), where contributions go through the studio's Stripe checkout. The wording follows the site's: Metronome is free and stays free; contributing is entirely optional and Metronome works fully without it.
+
 ## 1.7.3 — 28 October 2026
 
 - **Help compares 11 with 10, not 7.** 11 sits next to 10 on the slider, so that's the comparison people make. Re-measured (A-weighted): 11 is 8.9 dB louder than 10 — nearly twice as loud — and 17.7 dB louder than the standard click at 7, over three times as loud. Help now says both.
