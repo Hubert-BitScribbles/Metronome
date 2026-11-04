@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.5 — 4 November 2026
+
+- **About → Support → Contribute now opens bitscribbles.com's Take part page** (`takepart.html`), which replaced <upNext/>. No wording change: the button already says Contribute.
+
 ## 1.7.4 — 3 November 2026
 
 - **About → Support: Contribute instead of Buy me a coffee.** The button now opens the Contribute section of bitscribbles.com's <upNext/> page (`upnext.html#contribute`), where contributions go through the studio's Stripe checkout. The wording follows the site's: Metronome is free and stays free; contributing is entirely optional and Metronome works fully without it.

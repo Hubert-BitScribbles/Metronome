@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-const VERSION = '1.7.4';
+const VERSION = '1.7.5';
 
 // ── Icons ───────────────────────────────────────────────────────
 const svgProps = (size) => ({ width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true, focusable:'false' });
@@ -671,7 +671,7 @@ const Metronome = () => {
                     <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:10 }}>
                         <a href={'mailto:support@bitscribbles.com?subject=' + encodeURIComponent('Metronome ' + VERSION)}
                             style={{ display:'inline-block', background:TEAL, color:INK, fontFamily:INTER, fontWeight:600, fontSize:13, padding:'9px 16px', borderRadius:999, textDecoration:'none' }}>Send feedback</a>
-                        <a href="https://bitscribbles.com/upnext.html#contribute" target="_blank" rel="noopener noreferrer"
+                        <a href="https://bitscribbles.com/takepart.html" target="_blank" rel="noopener noreferrer"
                             style={{ display:'inline-block', background:AMBER, color:INK, fontFamily:INTER, fontWeight:600, fontSize:13, padding:'9px 16px', borderRadius:999, textDecoration:'none' }}>Contribute</a>
                     </div>
                     <P last><span style={{ display:'block', marginTop:8, fontSize:13 }}>support@bitscribbles.com</span></P>
