@@ -15,9 +15,10 @@ Live at **https://metronome.bitscribbles.com**, a Cloudflare Worker that serves 
 | `fonts/` | Self-hosted Space Grotesk, Inter, JetBrains Mono and Caveat (SIL OFL, `fonts/OFL.txt`) |
 | `licenses.txt` | Written by `npm run build`: every open-source package in `app.js` with its full licence, and the fonts' licence. Linked from About → Credits. |
 | `manifest.json`, `*.png` | Install details and icons |
+| `clips/` | The iPhone install clips (Safari and Chrome) and their stills, shown in the welcome. Never cached offline (`sw.js` skips them). From the "Metronome Install Clips" artifact; how to show them: `claude/platform/install-clips/README.md` in the Project. |
 | `design/` | Icon source (`metronome-icon.svg`) and `make-icons.py`, which rebuilds every icon size |
 | `build/` | Build tools (esbuild, React, axe-core). Kept out of the repo root so Cloudflare serves the site as plain files. |
-| `checks/check.py` | Browser checks: tap tempo, keyboard, screen wake, offline, accessibility (axe) in both themes |
+| `checks/check.py` | Browser checks: tap tempo, keyboard, screen wake, offline, the welcome on each device path, accessibility (axe) in both themes |
 
 ## Making a change
 
