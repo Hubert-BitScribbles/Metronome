@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-const VERSION = '1.7.5';
+const VERSION = '1.8.0';
 
 // ── Icons ───────────────────────────────────────────────────────
 const svgProps = (size) => ({ width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true, focusable:'false' });
@@ -175,10 +175,110 @@ const loudClick = (ctx, dest, time, accent) => {
     noise.connect(bp); bp.connect(ng); ng.connect(dest); noise.start(time); noise.stop(time + 0.012);
 };
 
+// ── Welcome: what it is and where things are; then, in a browser tab, how to install it ──
+// Device and browser detection and the install steps are ported from Liquid Clock 1.9.0, which took
+// them from Clear Tracker (src/lib/install.ts). Install clips follow
+// claude/platform/install-clips/README.md: beside the written steps, browser tab only, iPhone only,
+// Safari's clip for Safari 27+, closed until tapped, fetched whole and played from memory, and never
+// cached offline (sw.js skips clips/).
+const OS_N = { iphone:'iPhone', ipad:'iPad', android:'Android', mac:'Mac', windows:'Windows', linux:'Linux', other:'another device' };
+const BR_N = { safari:'Safari', chrome:'Chrome', edge:'Edge', firefox:'Firefox', samsung:'Samsung Internet', other:'another browser' };
+const DEV_A = { iphone:'an iPhone', ipad:'an iPad', android:'an Android device', mac:'a Mac', windows:'a Windows computer', linux:'a Linux computer', other:'another device' };
+function detectDevice(ua, touchMac) {
+    let os = 'other', br = 'other';
+    if (/iPhone|iPod/.test(ua)) os = 'iphone';
+    else if (/iPad/.test(ua) || (/Macintosh/.test(ua) && touchMac)) os = 'ipad';
+    else if (/Android/i.test(ua)) os = 'android';
+    else if (/Macintosh|Mac OS X/.test(ua)) os = 'mac';
+    else if (/Windows/.test(ua)) os = 'windows';
+    else if (/Linux|CrOS/.test(ua)) os = 'linux';
+    if (/EdgiOS|EdgA|Edg\//.test(ua)) br = 'edge';
+    else if (/SamsungBrowser/.test(ua)) br = 'samsung';
+    else if (/FxiOS|Firefox\//.test(ua)) br = 'firefox';
+    else if (/CriOS|Chrome\/|Chromium\//.test(ua)) br = 'chrome';
+    else if (/Safari\//.test(ua) && /Version\//.test(ua)) br = 'safari';
+    else if (os === 'iphone' || os === 'ipad') br = 'safari';
+    return { os, browser: br };
+}
+// Safari's user agent freezes the iOS version, but its Version/NN token still follows the major release
+function safariMajor(ua) {
+    if (detectDevice(ua).browser !== 'safari') return null;
+    const m = /Version\/(\d+)/.exec(ua);
+    return m ? +m[1] : null;
+}
+const detectedDevice = () => detectDevice(navigator.userAgent, navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function savedDevice() {
+    try { const d = JSON.parse(store.get('bs-device') || 'null'); if (d && d.os in OS_N && d.browser in BR_N) return d; } catch {}
+    return detectedDevice();
+}
+const isInstalled = () => {
+    try { return matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true; }
+    catch { return false; }
+};
+// The browser's own install prompt (Chrome, Edge, Samsung Internet), kept for the Install button
+let installEvt = null;
+const installListeners = new Set();
+const tellInstall = () => installListeners.forEach((f) => f());
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; tellInstall(); });
+window.addEventListener('appinstalled', () => { installEvt = null; tellInstall(); });
+
+const SAFARI_MENU_AT_LEFT = 27;
+const CLIPS = {
+    safari: { src:'clips/install-iphone-safari.mp4', poster:'clips/install-iphone-safari.jpg', secs:26,
+        label:'Video of the steps above, in Safari: tap ≡ at the left of the address bar, then Share, View More and Add to Home Screen, keep Open as Web App on and tap Add.' },
+    chrome: { src:'clips/install-iphone-chrome.mp4', poster:'clips/install-iphone-chrome.jpg', secs:24,
+        label:'Video of the steps above, in Chrome: tap Share in the address bar, then View More, scroll down to Add to Home Screen, keep Open as Web App on and tap Add.' },
+};
+// Steps are our own text with <b> for the names on screen
+function installGuide(d, offer, safari) {
+    const br = d.browser === 'other' ? 'this browser' : BR_N[d.browser], ios = d.os === 'iphone' || d.os === 'ipad';
+    const open = 'Open Metronome from your Home Screen.', add = 'Keep <b>Open as Web App</b> on, then tap <b>Add</b>.';
+    const why = 'Installed, Metronome opens in a tap, without the browser’s bars, and works offline.';
+    if (ios) {
+        let steps, clip = null;
+        if (d.os === 'iphone' && d.browser === 'safari' && (safari === null || safari >= SAFARI_MENU_AT_LEFT)) {
+            clip = 'safari';
+            steps = ['Tap <b>≡</b> at the left of the address bar, then <b>Share</b>. If Share is already in the toolbar, tap it there.',
+                'Tap <b>View More</b>, then <b>Add to Home Screen</b> (scroll down if you don’t see it).', add, open];
+        } else if (d.os === 'iphone' && d.browser === 'chrome') {
+            clip = 'chrome';
+            steps = ['Tap <b>Share</b> in the address bar.', 'Tap <b>View More</b>, then scroll down to <b>Add to Home Screen</b>, in the second group, below <b>Print</b>.', add, open];
+        } else {
+            steps = [d.browser === 'safari' ? 'Tap <b>⋯</b> next to the address bar, then <b>Share</b>. If Share is already in the toolbar, tap it there.'
+                : d.browser === 'chrome' ? 'Tap <b>Share</b> in the address bar.'
+                : `Open ${d.browser === 'other' ? 'the browser' : BR_N[d.browser]}’s menu and tap <b>Share</b>.`,
+                'Choose <b>Add to Home Screen</b> (scroll down if you don’t see it), keep <b>Open as Web App</b> on if it’s offered, then tap <b>Add</b>.', open];
+        }
+        return { head:'Add it to your Home Screen', why, steps, clip,
+            note:`The Home Screen Metronome keeps its own presets and settings, separate from ${br}, so set them up there.` };
+    }
+    if (d.os === 'mac' && d.browser === 'safari') return { head:'Add it to your Dock', why,
+        steps:['In the menu bar, choose <b>File → Add to Dock</b> (macOS Sonoma or later), then <b>Add</b>.', 'Open Metronome from the Dock.'],
+        note:'The Dock app keeps its own presets and settings, separate from Safari.' };
+    if (d.browser === 'firefox' && d.os !== 'android') { const k = d.os === 'mac' ? '⌘' : 'Ctrl'; return { head:'Keep it handy',
+        why:'Firefox can’t install Metronome as an app on a computer, but it runs well in a tab.',
+        steps:[`Bookmark this page (<b>${k}+D</b>).`, 'For an app window that works offline, open this page in Chrome or Edge instead.'], note:'' }; }
+    const android = d.os === 'android';
+    const steps = offer ? ['Tap <b>Install Metronome</b> below.']
+        : android ? [d.browser === 'samsung' ? 'Tap <b>≡</b>, then <b>Add page to → Home screen</b>.'
+            : d.browser === 'firefox' ? 'Tap <b>⋮</b>, then <b>Add to Home screen</b>.'
+            : `Tap <b>${d.browser === 'edge' ? '⋯' : '⋮'}</b>, then <b>Install app</b> or <b>Add to Home screen</b>.`, open]
+        : d.browser === 'edge' ? ['Open Edge’s menu (<b>⋯</b>) and choose <b>Apps → Install this site as an app</b>.']
+        : d.browser === 'chrome' ? ['Click the install icon at the right of the address bar, or open <b>⋮ → Cast, save and share → Install page as app</b>.']
+        : ['Look in your browser’s menu for <b>Install</b> or <b>Add to Home Screen</b>.'];
+    return { head: android ? 'Add it to your Home Screen' : 'Install it as an app', why, steps, note:'' };
+}
+// First visit only. People who used Metronome before this version already know it: any saved setting
+// (bs-sig is saved on every visit since 1.6.0) means they've been here. Read before the app saves anything.
+const USED_BEFORE = ['bs-sig', 'bs-theme', 'bs-volume', 'bs-accent', 'bs-eleven', 'metronome-presets'].some((k) => store.get(k) !== null);
+const FORCE_WELCOME = /[?&]welcome\b/.test(location.search);   // ?welcome shows it again, for trying it out
+
 // ── Components ──────────────────────────────────────────────────
-function Modal({ isOpen, onClose, title, children, t }) {
+function Modal({ isOpen, onClose, title, children, t, closeLabel = 'Close', focusKey }) {
     const boxRef   = useRef(null);
     const closeRef = useRef(null);
+    const headRef  = useRef(null);
+    const bodyRef  = useRef(null);
     useEffect(() => {
         if (!isOpen) return;
         const opener = document.activeElement;
@@ -186,7 +286,7 @@ function Modal({ isOpen, onClose, title, children, t }) {
         const onKey = (e) => {
             if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
             if (e.key !== 'Tab' || !boxRef.current) return;
-            const f = boxRef.current.querySelectorAll('button, a[href], input, [tabindex]:not([tabindex="-1"])');
+            const f = [...boxRef.current.querySelectorAll('button, a[href], input, select, video[controls], [tabindex]:not([tabindex="-1"])')].filter((x) => x.offsetParent !== null);
             if (!f.length) return;
             const first = f[0], last = f[f.length - 1];
             if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -195,6 +295,14 @@ function Modal({ isOpen, onClose, title, children, t }) {
         document.addEventListener('keydown', onKey);
         return () => { document.removeEventListener('keydown', onKey); opener && opener.focus && opener.focus(); };
     }, [isOpen]);
+    // A new screen in the same dialog (the welcome's 1 → 2): start at its top, focus its heading
+    const firstKey = useRef(true);
+    useEffect(() => {
+        if (!isOpen) { firstKey.current = true; return; }
+        if (firstKey.current) { firstKey.current = false; return; }
+        if (bodyRef.current) bodyRef.current.scrollTop = 0;
+        headRef.current && headRef.current.focus({ preventScroll: true });
+    }, [focusKey, isOpen]);
     if (!isOpen) return null;
     const id = 'dlg-' + title.replace(/\W+/g, '-').toLowerCase();
     return (
@@ -206,12 +314,12 @@ function Modal({ isOpen, onClose, title, children, t }) {
             <div ref={boxRef} role="dialog" aria-modal="true" aria-labelledby={id} className="dialog"
                 style={{ background:t.modalBg, border:'1px solid ' + t.cardBorder, borderRadius:20, boxShadow:t.cardShadow, animation: reduceMotion ? 'none' : 'modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1)' }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, padding:'18px 18px 14px 28px', borderBottom:'1px solid ' + t.divider, flexShrink:0 }}>
-                    <h2 id={id} style={{ margin:0, fontFamily:GROTESK, fontWeight:700, fontSize:18, color:t.text }}>{title}</h2>
-                    <button ref={closeRef} onClick={onClose} aria-label="Close" style={{ background:t.btnBg, border:'1px solid ' + t.btnBorder, borderRadius:12, width:44, height:44, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', color:t.textMid, cursor:'pointer' }}>
+                    <h2 id={id} ref={headRef} tabIndex={-1} style={{ margin:0, fontFamily:GROTESK, fontWeight:700, fontSize:18, color:t.text, outline:'none' }}>{title}</h2>
+                    <button ref={closeRef} onClick={onClose} aria-label={closeLabel} style={{ background:t.btnBg, border:'1px solid ' + t.btnBorder, borderRadius:12, width:44, height:44, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', color:t.textMid, cursor:'pointer' }}>
                         <X size={18}/>
                     </button>
                 </div>
-                <div className="dialog-body" tabIndex={0} style={{ padding:'18px 28px 24px', fontFamily:INTER, fontSize:14, lineHeight:1.65, color:t.textBody }}>{children}</div>
+                <div className="dialog-body" ref={bodyRef} tabIndex={0} style={{ padding:'18px 28px 24px', fontFamily:INTER, fontSize:14, lineHeight:1.65, color:t.textBody }}>{children}</div>
             </div>
         </div>
     );
@@ -240,6 +348,131 @@ function Toggle({ on, onToggle, label, t }) {
     );
 }
 
+// The welcome: 1 — what Metronome is and where everything is; 2 — how to install it on this device
+function Welcome({ open, screen, setScreen, onClose, t, dark }) {
+    const installed = isInstalled();
+    const [dev, setDev]           = useState(savedDevice);
+    const [picking, setPicking]   = useState(false);
+    const [, bump]                = useState(0);          // re-render when the install prompt arrives or is used
+    const [clipOn, setClipOn]     = useState(false);
+    const [clipUrl, setClipUrl]   = useState(null);
+    const [clipErr, setClipErr]   = useState(false);
+    useEffect(() => { const f = () => bump((n) => n + 1); installListeners.add(f); return () => installListeners.delete(f); }, []);
+    const g = installGuide(dev, !!installEvt, safariMajor(navigator.userAgent));
+    const clip = g.clip ? CLIPS[g.clip] : null;
+    // The clip is fetched whole and played from memory: iPhone Safari plays streamed video only if the
+    // server's byte ranges are just so. Its memory is freed when it's hidden or the guide changes.
+    const stopClip = () => { setClipOn(false); setClipErr(false); setClipUrl((u) => { if (u) URL.revokeObjectURL(u); return null; }); };
+    useEffect(() => { stopClip(); }, [g.clip, open, screen]);
+    useEffect(() => {
+        if (!clipOn || !clip) return;
+        let gone = false;
+        fetch(clip.src).then((r) => r.ok ? r.blob() : Promise.reject(r.status))
+            .then((b) => { if (!gone) setClipUrl(URL.createObjectURL(b)); })
+            .catch(() => { if (!gone) setClipErr(true); });
+        return () => { gone = true; };
+    }, [clipOn, g.clip]);
+    const pick = (os, browser) => {
+        const d = { os, browser }, a = detectedDevice();
+        if (os === a.os && browser === a.browser) { try { localStorage.removeItem('bs-device'); } catch {} }
+        else store.set('bs-device', JSON.stringify(d));
+        setDev(d);
+    };
+    const doInstall = async () => {
+        if (!installEvt) return;
+        const e = installEvt; installEvt = null;
+        try { await e.prompt(); await e.userChoice; } catch {}
+        tellInstall();
+    };
+
+    const eyebrow = (s) => <div style={{ fontFamily:MONO, fontSize:11, letterSpacing:'0.12em', textTransform:'uppercase', color:t.label, marginBottom:10 }}>{s}</div>;
+    const btn = (primary) => ({ minHeight:44, padding:'10px 18px', borderRadius:999, fontFamily:INTER, fontWeight:600, fontSize:14, cursor:'pointer',
+        background: primary ? TEAL : 'none', color: primary ? INK : t.text,
+        borderWidth:1, borderStyle:'solid', borderColor: primary ? TEAL : t.btnBorder });
+    const acts = (children) => <div style={{ display:'flex', flexWrap:'wrap', gap:10, justifyContent:'flex-end', marginTop:18 }}>{children}</div>;
+    const linkBtn = { background:'none', border:'none', padding:'10px 2px', margin:'-10px -2px', color:t.link, fontFamily:INTER, fontWeight:600, fontSize:14, cursor:'pointer', textDecoration:'underline', textUnderlineOffset:3 };
+    const chip = (icon, label) => (
+        <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 10px', borderRadius:10, border:'1px solid ' + t.btnBorder, background:t.btnBg, color:t.textMid, fontFamily:INTER, fontWeight:600, fontSize:12 }}>
+            {icon}{label}
+        </span>
+    );
+    const start = installed ? 'Start practising' : null;
+
+    const one = (
+        <>
+            {!installed && eyebrow('1 of 2')}
+            <p style={{ margin:'0 0 8px', fontFamily:GROTESK, fontWeight:700, fontSize:20, lineHeight:1.3, color:t.text }}>A metronome that doesn’t suck.</p>
+            <P>Made because a friend wanted one: a steady click from 40 to 240 BPM, tap tempo, five time signatures, an accent on beat one, and a volume that goes to 11. No ads, no sign-up, and it keeps working offline.</P>
+            <div style={{ marginTop:16, padding:'14px 16px', border:'1px solid ' + t.divider, borderRadius:14 }}>
+                <h3 style={{ margin:'0 0 8px', fontFamily:MONO, fontWeight:400, fontSize:11, letterSpacing:'0.12em', textTransform:'uppercase', color:t.label }}>Where everything is</h3>
+                <P><b>Everything you set is on the one screen:</b> tempo, presets, time signature, accent and volume. Metronome remembers your choices on this device.</P>
+                <div aria-hidden="true" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, margin:'10px 0 8px', padding:'8px 10px', borderRadius:12, background:t.btnBg }}>
+                    {chip(<HelpCircle size={13}/>, 'Help')}{chip(dark ? <Sun size={13}/> : <Moon size={13}/>, '')}{chip(<Info size={13}/>, 'About')}
+                </div>
+                <P last>At the top: <b>Help</b> explains every control, the <b>{dark ? 'sun' : 'moon'}</b> switches between light and dark, and <b>About</b> has the rest. To save a tempo, <b>press and hold a preset</b> until it shows ✓ saved.</P>
+            </div>
+            {acts(<button type="button" style={btn(true)} onClick={() => installed ? onClose() : setScreen(2)}>{start || 'Next'}</button>)}
+        </>
+    );
+
+    const two = (
+        <>
+            {eyebrow('2 of 2')}
+            <P>{g.why}</P>
+            <p style={{ margin:'0 0 8px', fontSize:13, color:t.textMid }}>
+                Looks like you’re using {DEV_A[dev.os]}, in {BR_N[dev.browser]}.{' '}
+                <button type="button" style={{ ...linkBtn, fontSize:13 }} aria-expanded={picking} onClick={() => setPicking((v) => !v)}>Not right? Change</button>
+            </p>
+            {picking && (
+                <div style={{ display:'flex', flexWrap:'wrap', gap:'10px 16px', margin:'4px 0 12px' }}>
+                    {[['Device', 'os', OS_N, 'Another device'], ['Browser', 'browser', BR_N, 'Another browser']].map(([lbl, key, names, other]) => (
+                        <label key={key} style={{ display:'flex', flexDirection:'column', gap:4, fontSize:13, color:t.textMid }}>{lbl}
+                            <select value={dev[key]} onChange={(e) => key === 'os' ? pick(e.target.value, dev.browser) : pick(dev.os, e.target.value)}
+                                style={{ fontFamily:INTER, fontSize:16, color:t.text, background:t.btnBg, border:'1px solid ' + t.btnBorder, borderRadius:10, padding:'8px 10px', minHeight:44 }}>
+                                {Object.keys(names).map((k) => <option key={k} value={k} style={{ color:INK }}>{k === 'other' ? other : names[k]}</option>)}
+                            </select>
+                        </label>
+                    ))}
+                </div>
+            )}
+            <ol style={{ margin:'4px 0 12px', paddingLeft:22 }}>
+                {g.steps.map((x, i) => <li key={i} style={{ margin:'0 0 8px' }} dangerouslySetInnerHTML={{ __html: x }}/>)}
+            </ol>
+            {clip && (
+                <div style={{ margin:'2px 0 12px' }}>
+                    <button type="button" style={linkBtn} aria-expanded={clipOn} onClick={() => clipOn ? stopClip() : setClipOn(true)}>
+                        {clipOn ? 'Hide the video' : `▶ Show me how · ${clip.secs} s video`}
+                    </button>
+                    {clipOn && (
+                        <figure style={{ margin:'12px 0 0' }}>
+                            <video src={clipUrl || undefined} poster={clip.poster} muted loop playsInline
+                                autoPlay={!reduceMotion} controls={reduceMotion} aria-label={clip.label}
+                                style={{ display:'block', width:200, maxWidth:'100%', aspectRatio:'9 / 16', height:'auto', borderRadius:16, border:'1px solid ' + t.divider, background:'#EDEAF7' }}/>
+                            <figcaption style={{ marginTop:6, fontSize:12, color:t.textMid }}>
+                                {clipErr ? 'The video needs an internet connection. The steps above say the same.' : `${BR_N[dev.browser]}, step by step · no sound`}
+                            </figcaption>
+                        </figure>
+                    )}
+                </div>
+            )}
+            {g.note && <p style={{ margin:'0 0 8px', fontSize:13, color:t.textMid }}>{g.note}</p>}
+            {acts(<>
+                <button type="button" style={btn(false)} onClick={() => setScreen(1)}>Back</button>
+                {installEvt && <button type="button" style={btn(true)} onClick={doInstall}>Install Metronome</button>}
+                <button type="button" style={btn(!installEvt)} onClick={onClose}>Start practising</button>
+            </>)}
+        </>
+    );
+
+    const shown = installed ? 1 : screen;
+    return (
+        <Modal isOpen={open} onClose={onClose} t={t} closeLabel="Skip" focusKey={shown}
+            title={shown === 1 ? 'Welcome to Metronome' : g.head}>
+            {shown === 1 ? one : two}
+        </Modal>
+    );
+}
+
 // ── Main App ────────────────────────────────────────────────────
 const Metronome = () => {
     const [dark, setDark] = useState(() => store.get('bs-theme') !== 'light');
@@ -261,6 +494,7 @@ const Metronome = () => {
     const [audioReady, setAudioReady]   = useState(false);
     const [showHelp, setShowHelp]       = useState(false);
     const [showAbout, setShowAbout]     = useState(false);
+    const [welcome, setWelcome]         = useState({ open:false, screen:1 });
     const [pressedBtn, setPressedBtn]   = useState(null);
     const [accentBeat, setAccentBeat]   = useState(() => store.get('bs-accent') === 'true');
     const [upToEleven, setUpToEleven]   = useState(() => store.get('bs-eleven') === 'true');
@@ -290,7 +524,16 @@ const Metronome = () => {
     }, [timeSig]);
     useEffect(() => { accentRef.current = accentBeat; }, [accentBeat]);
     useEffect(() => { elevenRef.current = upToEleven; }, [upToEleven]);
-    useEffect(() => { modalOpen.current = showHelp || showAbout; }, [showHelp, showAbout]);
+    useEffect(() => { modalOpen.current = showHelp || showAbout || welcome.open; }, [showHelp, showAbout, welcome.open]);
+    // First visit (or ?welcome): the welcome, once
+    useEffect(() => {
+        if (FORCE_WELCOME || (!USED_BEFORE && !store.get('bs-welcomed'))) {
+            const id = setTimeout(() => setWelcome({ open:true, screen:1 }), 400);
+            return () => clearTimeout(id);
+        }
+    }, []);
+    const closeWelcome = () => { store.set('bs-welcomed', '1'); setWelcome((w) => ({ ...w, open:false })); };
+    const showInstall  = () => { setShowHelp(false); setWelcome({ open:true, screen:2 }); };
 
     const toggleAccent = () => setAccentBeat(a => { store.set('bs-accent', String(!a)); return !a; });
     const toggleEleven = () => setUpToEleven(e => { store.set('bs-eleven', String(!e)); return !e; });
@@ -648,14 +891,24 @@ const Metronome = () => {
                     <P last>If a phone call or another app took over the sound, tap Stop, then Start.</P>
                 </Section>
                 <Section t={t} title="Install It">
-                    <P><b>iPhone:</b> in Safari, tap Share, then Add to Home Screen. <b>Android:</b> in Chrome, open the menu and choose Install app or Add to Home screen.</P>
-                    <P last>Once it has opened once, Metronome works without an internet connection.</P>
+                    {isInstalled()
+                        ? <P last>You’re using the installed Metronome. It works without an internet connection.</P>
+                        : <>
+                            <P>Installed, Metronome opens in a tap, without the browser’s bars, and works without an internet connection.</P>
+                            <button type="button" onClick={showInstall}
+                                style={{ background:'none', border:'none', padding:'10px 2px', margin:'-10px -2px', color:t.link, fontFamily:INTER, fontWeight:600, fontSize:14, cursor:'pointer', textDecoration:'underline', textUnderlineOffset:3 }}>
+                                How to install it on this device
+                            </button>
+                          </>}
                 </Section>
                 <Section t={t} title="Keyboard">Space starts and stops. T taps the tempo. Arrow keys move the slider when it's selected.</Section>
                 <Section t={t} title="Light / Dark Mode">Tap the sun or moon at the top. Remembered on this device.</Section>
             </Modal>
 
             {/* About */}
+            <Welcome open={welcome.open} screen={welcome.screen} setScreen={(n) => setWelcome((w) => ({ ...w, screen:n }))}
+                onClose={closeWelcome} t={t} dark={dark}/>
+
             <Modal isOpen={showAbout} onClose={() => setShowAbout(false)} title="About" t={t}>
                 <Section t={t} title={'Metronome ' + VERSION}>A steady, good-looking metronome. Clicks are scheduled ahead with your browser's Web Audio clock, so the beat stays even when the screen is busy.</Section>
                 <Section t={t} title="Made by bitScribbles™">

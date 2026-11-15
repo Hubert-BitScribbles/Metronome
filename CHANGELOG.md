@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.8.0 — 14 November 2026
+
+- **A short welcome, on the first visit.** Two screens, in the same style as Help and About:
+  1. **What Metronome is** ("A metronome that doesn't suck.") and **where everything is**: every setting is on the one screen, with Help, the light/dark switch and About along the top, and press-and-hold to save a preset.
+  2. **How to install it on this device** (in a browser tab only). The steps follow the device and browser, using the same detection as Clear Tracker and Liquid Clock: iPhone Safari 27+ (≡ → Share → View More), Safari 26 (⋯), iPhone Chrome (Share in the address bar → View More → below Print), iPad and other iOS browsers, Android, Mac Safari (File → Add to Dock), Chrome and Edge on computers, and Firefox on computers (which can't install, so a bookmark). **Not right? Change** corrects a wrong guess, and **Install Metronome** appears where the browser offers it.
+- **Install clips on iPhone:** "▶ Show me how" plays a short, silent video of the steps in Safari (26 s) or Chrome (24 s), beside the written steps. With Reduce Motion on, it shows a still with controls. The clips load only when asked for and are never saved for offline use.
+- Installed, the welcome is just the first screen. People who used Metronome before this version don't see it; anyone can open the install steps from **Help → Install It**, and `?welcome` shows the whole welcome again.
+- New checks for the welcome on each device path.
+
 ## 1.7.5 — 4 November 2026
 
 - **About → Support → Contribute now opens bitscribbles.com's Take part page** (`takepart.html`), which replaced <upNext/>. No wording change: the button already says Contribute.
